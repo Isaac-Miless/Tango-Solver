@@ -16,6 +16,8 @@
   margin-bottom: 2rem;
   width: 100%;
   /* Three columns: left spacer, board (center), right spacer/step history */
+  /* Ensure grid doesn't shift when step history appears */
+  justify-items: center;
 }
 
 /* Board wrapper - always in center column, never moves */
@@ -40,6 +42,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Ensure it doesn't affect the grid layout */
+  width: fit-content;
+  min-width: 0;
 }
 
 .loading {
@@ -66,6 +71,8 @@
   flex-direction: row;
   margin: 0;
   padding: 0;
+  position: relative;
+  /* Allow constraints to extend beyond cell boundaries */
 }
 
 .game-controls {

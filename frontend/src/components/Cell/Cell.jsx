@@ -26,20 +26,21 @@ function Cell({
 
   const getEdgeConstraint = (edge) => {
     // Constraints are normalized: always stored with first cell having smaller indices
-    // Only render on the first cell's appropriate edge to avoid duplicates
-    // Horizontal constraints: render on first cell's right edge
-    // Vertical constraints: render on first cell's bottom edge
+    // Render on the SECOND cell's left/top edge so it appears above the first cell
+    // This avoids z-index issues since later DOM elements naturally stack above earlier ones
+    // Horizontal constraints: render on second cell's left edge
+    // Vertical constraints: render on second cell's top edge
     
     // Check equals constraints
     for (const [r1, c1, r2, c2] of constraints.equals) {
-      // Check if this cell is the first cell and edge matches
-      if (row === r1 && col === c1) {
-        if (r1 === r2 && edge === 'right' && c2 === col + 1) {
-          // Horizontal constraint
+      // Check if this cell is the second cell and edge matches
+      if (row === r2 && col === c2) {
+        if (r1 === r2 && edge === 'left' && c1 === col - 1) {
+          // Horizontal constraint - render on second cell's left edge
           return { type: 'equals', edge: { row1: r1, col1: c1, row2: r2, col2: c2 } }
         }
-        if (c1 === c2 && edge === 'bottom' && r2 === row + 1) {
-          // Vertical constraint
+        if (c1 === c2 && edge === 'top' && r1 === row - 1) {
+          // Vertical constraint - render on second cell's top edge
           return { type: 'equals', edge: { row1: r1, col1: c1, row2: r2, col2: c2 } }
         }
       }
@@ -47,14 +48,14 @@ function Cell({
     
     // Check notEquals constraints
     for (const [r1, c1, r2, c2] of constraints.notEquals) {
-      // Check if this cell is the first cell and edge matches
-      if (row === r1 && col === c1) {
-        if (r1 === r2 && edge === 'right' && c2 === col + 1) {
-          // Horizontal constraint
+      // Check if this cell is the second cell and edge matches
+      if (row === r2 && col === c2) {
+        if (r1 === r2 && edge === 'left' && c1 === col - 1) {
+          // Horizontal constraint - render on second cell's left edge
           return { type: 'notEquals', edge: { row1: r1, col1: c1, row2: r2, col2: c2 } }
         }
-        if (c1 === c2 && edge === 'bottom' && r2 === row + 1) {
-          // Vertical constraint
+        if (c1 === c2 && edge === 'top' && r1 === row - 1) {
+          // Vertical constraint - render on second cell's top edge
           return { type: 'notEquals', edge: { row1: r1, col1: c1, row2: r2, col2: c2 } }
         }
       }

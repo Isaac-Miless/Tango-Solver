@@ -12,6 +12,7 @@
   cursor: pointer;
   background: white;
   position: relative;
+  z-index: 1;
   transition: background-color 0.2s ease, border-color 0.2s ease;
   font-size: 2rem;
   box-sizing: border-box;
@@ -29,6 +30,7 @@
   background: #e0e0e0 !important;
   cursor: not-allowed;
   opacity: 0.85;
+  z-index: 1;
 }
 
 .cell-locked.cell-sun {
@@ -70,9 +72,12 @@
 }
 
 @keyframes highlight-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
   }
+
   50% {
     box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
   }
@@ -82,9 +87,11 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
+
   100% {
     transform: scale(1);
   }
@@ -98,14 +105,17 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 2;
+  position: relative;
 }
 
 /* Edge drop zones */
 .edge {
   position: absolute;
-  z-index: 5;
+  z-index: 10;
   pointer-events: auto;
+  /* Create a new stacking context for constraints */
+  isolation: isolate;
 }
 
 .edge-top {
@@ -162,7 +172,10 @@
   border-radius: 50%;
   border: 2px solid #333;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  z-index: 10;
+  z-index: 9999;
+  pointer-events: auto;
+  /* Ensure constraint appears above all cells, even neighboring ones */
+  will-change: transform;
 }
 
 .edge-constraint-equals {
@@ -190,13 +203,25 @@
 .edge-constraint-left {
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateZ(0);
 }
 
 .edge-constraint-right {
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateZ(0);
+}
+
+.edge-constraint-top {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(0);
+}
+
+.edge-constraint-bottom {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(0);
 }
 
 .edge-drop-indicator {
@@ -215,14 +240,17 @@
   justify-content: center;
   border-radius: 50%;
   border: 2px solid #667eea;
-  z-index: 15;
+  z-index: 1000;
   animation: pulse 0.5s ease infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
+
   50% {
     transform: translate(-50%, -50%) scale(1.1);
   }
@@ -239,23 +267,23 @@
     max-height: 50px;
     font-size: 1.5rem;
   }
-  
+
   .edge-top,
   .edge-bottom {
     height: 20px;
   }
-  
+
   .edge-left,
   .edge-right {
     width: 20px;
   }
-  
+
   .edge-constraint {
     font-size: 0.9rem;
     width: 18px;
     height: 18px;
   }
-  
+
   .edge-drop-indicator {
     font-size: 1rem;
     width: 20px;
@@ -275,23 +303,23 @@
     font-size: 1.3rem;
     border-width: 1.5px;
   }
-  
+
   .edge-top,
   .edge-bottom {
     height: 18px;
   }
-  
+
   .edge-left,
   .edge-right {
     width: 18px;
   }
-  
+
   .edge-constraint {
     font-size: 0.85rem;
     width: 16px;
     height: 16px;
   }
-  
+
   .edge-drop-indicator {
     font-size: 0.9rem;
     width: 18px;
@@ -311,27 +339,27 @@
     font-size: 1.1rem;
     border-width: 1.5px;
   }
-  
+
   .edge-top,
   .edge-bottom {
     height: 16px;
     top: -8px;
     bottom: -8px;
   }
-  
+
   .edge-left,
   .edge-right {
     width: 16px;
     left: -8px;
     right: -8px;
   }
-  
+
   .edge-constraint {
     font-size: 0.75rem;
     width: 14px;
     height: 14px;
   }
-  
+
   .edge-drop-indicator {
     font-size: 0.8rem;
     width: 16px;
