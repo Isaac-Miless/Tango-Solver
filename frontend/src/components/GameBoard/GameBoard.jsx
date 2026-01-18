@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import Cell from '../Cell/Cell'
 import ConstraintToolbar from '../ConstraintToolbar/ConstraintToolbar'
 import StepHistoryPanel from '../StepHistoryPanel/StepHistoryPanel'
+import Confetti from '../Confetti/Confetti'
 import { checkWin } from '../../utils/gameLogic'
 import { validateStartingPosition } from '../../utils/validator'
 import { solvePuzzle, solvePuzzleStepByStep, getNextStep } from '../../utils/solver'
@@ -31,30 +32,17 @@ function GameBoard() {
   const [isViewingHistory, setIsViewingHistory] = useState(false)
   const [initialGrid, setInitialGrid] = useState(null)
   const [latestGrid, setLatestGrid] = useState(null) // Track the latest/final grid state
+  const [showConfetti, setShowConfetti] = useState(false)
+  const prevIsCompleteRef = useRef(false) // Track previous isComplete state
   const boardRef = useRef(null)
   const stepHistoryWrapperRef = useRef(null)
   
-  // Match step history width to board width when stacked, and height to board height
+  // Match step history height to board height
   useEffect(() => {
     const matchDimensions = () => {
       if (boardRef.current && stepHistoryWrapperRef.current) {
         const boardRect = boardRef.current.getBoundingClientRect()
-        const boardWidth = boardRect.width
         const boardHeight = boardRect.height
-        
-        if (window.innerWidth <= 1024) {
-          // When stacked (mobile/tablet), match width
-          if (boardWidth > 0) {
-            stepHistoryWrapperRef.current.style.width = `${boardWidth}px`
-            stepHistoryWrapperRef.current.style.maxWidth = `${boardWidth}px`
-            stepHistoryWrapperRef.current.style.minWidth = `${boardWidth}px`
-          }
-        } else {
-          // When side-by-side (desktop), reset width but match height
-          stepHistoryWrapperRef.current.style.width = ''
-          stepHistoryWrapperRef.current.style.maxWidth = ''
-          stepHistoryWrapperRef.current.style.minWidth = ''
-        }
         
         // Always match height to board height (for max-height of panel)
         if (boardHeight > 0 && stepHistoryWrapperRef.current) {
@@ -79,6 +67,20 @@ function GameBoard() {
       window.removeEventListener('resize', matchDimensions)
     }
   }, [grid, allSteps.length, isViewingHistory])
+
+  // Trigger confetti when puzzle is completed
+  useEffect(() => {
+    // Only trigger confetti when transitioning from incomplete to complete
+    if (isComplete && !prevIsCompleteRef.current) {
+      setShowConfetti(true)
+      // Hide confetti after animation completes
+      const timeout = setTimeout(() => {
+        setShowConfetti(false)
+      }, 3000)
+      return () => clearTimeout(timeout)
+    }
+    prevIsCompleteRef.current = isComplete
+  }, [isComplete])
 
   const handleCellClick = (row, col) => {
     // Don't allow editing locked cells
@@ -417,6 +419,7 @@ function GameBoard() {
 
   return (
     <div className="game-container">
+      <Confetti active={showConfetti} />
       <ConstraintToolbar 
         onDragStart={setDraggingConstraint}
         onDragEnd={() => setDraggingConstraint(null)}
@@ -469,28 +472,8 @@ function GameBoard() {
             </div>
           ))}
           </div>
-        </div>
-        
-        {allSteps.length > 0 && (
-          <div className="step-history-wrapper" ref={stepHistoryWrapperRef}>
-            {isViewingHistory && (
-              <button 
-                className="exit-history-button"
-                onClick={handleExitHistoryView}
-              >
-                Exit History View
-              </button>
-            )}
-            <StepHistoryPanel
-              steps={allSteps}
-              selectedStepIndex={viewingStepIndex}
-              onStepClick={handleStepClick}
-            />
-          </div>
-        )}
-      </div>
-      
-      <div className="game-controls">
+          
+          <div className="game-controls">
         <div className="control-buttons">
           <button className="reset-button" onClick={clearGrid}>
             Clear Grid
@@ -543,6 +526,26 @@ function GameBoard() {
         {isComplete && !validationError && (
           <div className="win-message">
             🎉 Puzzle solved!
+          </div>
+        )}
+          </div>
+        </div>
+        
+        {allSteps.length > 0 && (
+          <div className="step-history-wrapper" ref={stepHistoryWrapperRef}>
+            {isViewingHistory && (
+              <button 
+                className="exit-history-button"
+                onClick={handleExitHistoryView}
+              >
+                Exit History View
+              </button>
+            )}
+            <StepHistoryPanel
+              steps={allSteps}
+              selectedStepIndex={viewingStepIndex}
+              onStepClick={handleStepClick}
+            />
           </div>
         )}
       </div>

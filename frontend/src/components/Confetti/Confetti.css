@@ -1,0 +1,49 @@
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-particle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(var(--initial-rotation, 0deg));
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(var(--final-rotation, 0deg));
+    opacity: 0;
+  }
+}
+
+/* Add some variety with different shapes */
+.confetti-particle:nth-child(3n) {
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+}
+
+.confetti-particle:nth-child(5n) {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.confetti-particle:nth-child(7n) {
+  width: 6px;
+  height: 12px;
+  border-radius: 2px;
+}

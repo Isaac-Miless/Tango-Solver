@@ -134,6 +134,10 @@ function applyAllRules(grid, constraints, size) {
   step = applyEndWithEqualsConstraintRule(grid, constraints, size)
   if (step) return step
 
+  // Rule 10: Adjacent equals constraint rule
+  step = applyAdjacentEqualsConstraintRule(grid, constraints, size)
+  if (step) return step
+
   return null
 }
 
@@ -917,127 +921,209 @@ function applyModifierWithTwoEqualsRule(grid, constraints, size) {
 
 /**
  * Rule 9: End with equals constraint rule
- * If one end of a column/row has a known value, and at the other end there are
- * cells connected by an equals constraint, those cells must be the opposite value.
+ * If one end of a column/row has a known value, and in that same column/row there are
+ * cells connected by an equals constraint (vertical for columns, horizontal for rows),
+ * those cells must be the opposite value to avoid three in a row.
  * 
- * Example: Column has moon at top, and bottom cells are connected by equals.
- * Since they must be equal and opposite to the top, they must be suns.
+ * Example: Column has moon at top, and there's a vertical equals constraint in that
+ * same column. The cells in that constraint must be suns to avoid 3 moons in a row.
  */
 function applyEndWithEqualsConstraintRule(grid, constraints, size) {
-  // Check columns
+  // Check columns - vertical constraints only
   for (let col = 0; col < size; col++) {
     const top = grid[0][col]
     const bottom = grid[size - 1][col]
 
-    // Check if top is known and bottom has equals constraint
+    // Check if top is known and there's a vertical equals constraint at the BOTTOM
     if (top !== null) {
-      // Look for equals constraints involving bottom cells of this column
+      // Look for VERTICAL equals constraints at the bottom of this column
       for (const [r1, c1, r2, c2] of constraints.equals) {
-        // Check if constraint is at the bottom of this column (vertical constraint)
-        if (c1 === col && c2 === col && (r1 === size - 1 || r2 === size - 1)) {
-          const otherRow = r1 === size - 1 ? r2 : r1
-          if (otherRow < size - 2) continue // Only consider if near bottom
-          
-          const val1 = grid[r1][c1]
-          const val2 = grid[r2][c2]
-          const opposite = top === 'sun' ? 'moon' : 'sun'
+        // Must be a vertical constraint (same column, different rows)
+        if (c1 !== col || c2 !== col || r1 === r2) continue
+        
+        // Constraint must be at the bottom (at least one cell in last 2 rows)
+        const minRow = Math.min(r1, r2)
+        const maxRow = Math.max(r1, r2)
+        if (maxRow < size - 2) continue // Not at the bottom - skip
+        
+        const val1 = grid[r1][c1]
+        const val2 = grid[r2][c2]
+        const opposite = top === 'sun' ? 'moon' : 'sun'
 
-          // If both are empty, they must be opposite to top
-          if (val1 === null && val2 === null) {
-            grid[r1][c1] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${top === 'sun' ? 'sun' : 'moon'} at the top (row 1). The bottom cells at rows ${r1 + 1} and ${r2 + 1} are connected by an equals constraint (=), so they must be equal. Since the top is ${top === 'sun' ? 'sun' : 'moon'}, these bottom cells must be ${opposite === 'sun' ? 'sun' : 'moon'}. Filling row ${r1 + 1}.`,
-              [[0, col]],
-              [r1, c1],
-              opposite
-            )
-          }
-        }
-
-        // Check if constraint is horizontal at bottom row involving this column
-        if (r1 === size - 1 && r2 === size - 1 && (c1 === col || c2 === col)) {
-          const otherCol = c1 === col ? c2 : c1
-          const val1 = grid[r1][c1]
-          const val2 = grid[r2][c2]
-          const opposite = top === 'sun' ? 'moon' : 'sun'
-
-          // If the cell in this column is empty, it must be opposite to top
-          if (c1 === col && val1 === null) {
-            grid[r1][c1] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${top === 'sun' ? 'sun' : 'moon'} at the top (row 1). The bottom cell at row ${size} is connected by an equals constraint (=) to column ${otherCol + 1}. Since the top is ${top === 'sun' ? 'sun' : 'moon'}, the bottom cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[0, col]],
-              [r1, c1],
-              opposite
-            )
-          }
-          if (c2 === col && val2 === null) {
-            grid[r2][c2] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${top === 'sun' ? 'sun' : 'moon'} at the top (row 1). The bottom cell at row ${size} is connected by an equals constraint (=) to column ${otherCol + 1}. Since the top is ${top === 'sun' ? 'sun' : 'moon'}, the bottom cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[0, col]],
-              [r2, c2],
-              opposite
-            )
-          }
+        // If both constraint cells are empty, they must be opposite to top
+        if (val1 === null && val2 === null) {
+          grid[r1][c1] = opposite
+          return new SolvingStep(
+            'End with Equals Constraint Rule',
+            `Column ${col + 1} has ${top === 'sun' ? 'sun' : 'moon'} at the top (row 1). At the bottom of this column, the cells at rows ${r1 + 1} and ${r2 + 1} are connected by a vertical equals constraint (=), so they must be equal. To avoid three ${top === 'sun' ? 'suns' : 'moons'} in a row, these bottom cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling row ${r1 + 1}.`,
+            [[0, col]],
+            [r1, c1],
+            opposite
+          )
         }
       }
     }
 
-    // Check if bottom is known and top has equals constraint
+    // Check if bottom is known and there's a vertical equals constraint at the TOP
     if (bottom !== null) {
-      // Look for equals constraints involving top cells of this column
+      // Look for VERTICAL equals constraints at the top of this column
       for (const [r1, c1, r2, c2] of constraints.equals) {
-        // Check if constraint is at the top of this column (vertical constraint)
-        if (c1 === col && c2 === col && (r1 === 0 || r2 === 0)) {
-          const otherRow = r1 === 0 ? r2 : r1
-          if (otherRow > 1) continue // Only consider if near top
-          
+        // Must be a vertical constraint (same column, different rows)
+        if (c1 !== col || c2 !== col || r1 === r2) continue
+        
+        // Constraint must be at the top (at least one cell in first 2 rows)
+        const minRow = Math.min(r1, r2)
+        const maxRow = Math.max(r1, r2)
+        if (minRow > 1) continue // Not at the top - skip
+        
+        const val1 = grid[r1][c1]
+        const val2 = grid[r2][c2]
+        const opposite = bottom === 'sun' ? 'moon' : 'sun'
+
+        // If both constraint cells are empty, they must be opposite to bottom
+        if (val1 === null && val2 === null) {
+          grid[r1][c1] = opposite
+          return new SolvingStep(
+            'End with Equals Constraint Rule',
+            `Column ${col + 1} has ${bottom === 'sun' ? 'sun' : 'moon'} at the bottom (row ${size}). At the top of this column, the cells at rows ${r1 + 1} and ${r2 + 1} are connected by a vertical equals constraint (=), so they must be equal. To avoid three ${bottom === 'sun' ? 'suns' : 'moons'} in a row, these top cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling row ${r1 + 1}.`,
+            [[size - 1, col]],
+            [r1, c1],
+            opposite
+          )
+        }
+      }
+    }
+  }
+
+  // Check rows - horizontal constraints only, at the OPPOSITE end
+  for (let row = 0; row < size; row++) {
+    const left = grid[row][0]
+    const right = grid[row][size - 1]
+
+    // Check if left is known and there's a horizontal equals constraint at the RIGHT
+    if (left !== null) {
+      // Look for HORIZONTAL equals constraints at the right of this row
+      for (const [r1, c1, r2, c2] of constraints.equals) {
+        // Must be a horizontal constraint (same row, different columns)
+        if (r1 !== row || r2 !== row || c1 === c2) continue
+        
+        // Constraint must be at the right (at least one cell in last 2 columns)
+        const minCol = Math.min(c1, c2)
+        const maxCol = Math.max(c1, c2)
+        if (maxCol < size - 2) continue // Not at the right
+        
+        const val1 = grid[r1][c1]
+        const val2 = grid[r2][c2]
+        const opposite = left === 'sun' ? 'moon' : 'sun'
+
+        // If both constraint cells are empty, they must be opposite to left
+        if (val1 === null && val2 === null) {
+          grid[r1][c1] = opposite
+          return new SolvingStep(
+            'End with Equals Constraint Rule',
+            `Row ${row + 1} has ${left === 'sun' ? 'sun' : 'moon'} at the left (column 1). At the right of this row, the cells at columns ${c1 + 1} and ${c2 + 1} are connected by a horizontal equals constraint (=), so they must be equal. To avoid three ${left === 'sun' ? 'suns' : 'moons'} in a row, these right cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling column ${c1 + 1}.`,
+            [[row, 0]],
+            [r1, c1],
+            opposite
+          )
+        }
+      }
+    }
+
+    // Check if right is known and there's a horizontal equals constraint at the LEFT
+    if (right !== null) {
+      // Look for HORIZONTAL equals constraints at the left of this row
+      for (const [r1, c1, r2, c2] of constraints.equals) {
+        // Must be a horizontal constraint (same row, different columns)
+        if (r1 !== row || r2 !== row || c1 === c2) continue
+        
+        // Constraint must be at the left (at least one cell in first 2 columns)
+        const minCol = Math.min(c1, c2)
+        const maxCol = Math.max(c1, c2)
+        if (minCol > 1) continue // Not at the left
+        
+        const val1 = grid[r1][c1]
+        const val2 = grid[r2][c2]
+        const opposite = right === 'sun' ? 'moon' : 'sun'
+
+        // If both constraint cells are empty, they must be opposite to right
+        if (val1 === null && val2 === null) {
+          grid[r1][c1] = opposite
+          return new SolvingStep(
+            'End with Equals Constraint Rule',
+            `Row ${row + 1} has ${right === 'sun' ? 'sun' : 'moon'} at the right (column ${size}). At the left of this row, the cells at columns ${c1 + 1} and ${c2 + 1} are connected by a horizontal equals constraint (=), so they must be equal. To avoid three ${right === 'sun' ? 'suns' : 'moons'} in a row, these left cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling column ${c1 + 1}.`,
+            [[row, size - 1]],
+            [r1, c1],
+            opposite
+          )
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Rule 10: Adjacent equals constraint rule
+ * If a known value has an equals constraint directly adjacent to it (above/below for columns,
+ * left/right for rows), the constraint cells must be the opposite value to avoid three in a row.
+ * 
+ * Example: Column 6 has moon at row 2, and there's a vertical equals constraint in rows 3-4
+ * directly below it (no gap). The constraint cells must be suns to avoid: moon + moon + moon = 3 moons.
+ */
+function applyAdjacentEqualsConstraintRule(grid, constraints, size) {
+  // Check columns - vertical constraints
+  for (let col = 0; col < size; col++) {
+    for (let row = 0; row < size; row++) {
+      const value = grid[row][col]
+      if (value === null) continue
+
+      // Look for vertical equals constraints in the same column
+      for (const [r1, c1, r2, c2] of constraints.equals) {
+        // Must be a vertical constraint in the same column
+        if (c1 !== col || c2 !== col || r1 === r2) continue
+        
+        // The known value must NOT be part of the constraint
+        if ((row === r1 && col === c1) || (row === r2 && col === c2)) continue
+        
+        const minRow = Math.min(r1, r2)
+        const maxRow = Math.max(r1, r2)
+        
+        // Check if constraint is directly below (no gap)
+        // One of the constraint cells must be immediately below the known value
+        if (minRow === row + 1) {
           const val1 = grid[r1][c1]
           const val2 = grid[r2][c2]
-          const opposite = bottom === 'sun' ? 'moon' : 'sun'
+          const opposite = value === 'sun' ? 'moon' : 'sun'
 
-          // If both are empty, they must be opposite to bottom
+          // If both constraint cells are empty, they must be opposite
           if (val1 === null && val2 === null) {
             grid[r1][c1] = opposite
             return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${bottom === 'sun' ? 'sun' : 'moon'} at the bottom (row ${size}). The top cells at rows ${r1 + 1} and ${r2 + 1} are connected by an equals constraint (=), so they must be equal. Since the bottom is ${bottom === 'sun' ? 'sun' : 'moon'}, these top cells must be ${opposite === 'sun' ? 'sun' : 'moon'}. Filling row ${r1 + 1}.`,
-              [[size - 1, col]],
+              'Adjacent Equals Constraint Rule',
+              `Column ${col + 1} has ${value === 'sun' ? 'sun' : 'moon'} at row ${row + 1}. Directly below it, the cells at rows ${r1 + 1} and ${r2 + 1} are connected by a vertical equals constraint (=), so they must be equal. To avoid three ${value === 'sun' ? 'suns' : 'moons'} in a row, these cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling row ${r1 + 1}.`,
+              [[row, col]],
               [r1, c1],
               opposite
             )
           }
         }
 
-        // Check if constraint is horizontal at top row involving this column
-        if (r1 === 0 && r2 === 0 && (c1 === col || c2 === col)) {
-          const otherCol = c1 === col ? c2 : c1
+        // Check if constraint is directly above (no gap)
+        // One of the constraint cells must be immediately above the known value
+        if (maxRow === row - 1) {
           const val1 = grid[r1][c1]
           const val2 = grid[r2][c2]
-          const opposite = bottom === 'sun' ? 'moon' : 'sun'
+          const opposite = value === 'sun' ? 'moon' : 'sun'
 
-          // If the cell in this column is empty, it must be opposite to bottom
-          if (c1 === col && val1 === null) {
+          if (val1 === null && val2 === null) {
             grid[r1][c1] = opposite
             return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${bottom === 'sun' ? 'sun' : 'moon'} at the bottom (row ${size}). The top cell at row 1 is connected by an equals constraint (=) to column ${otherCol + 1}. Since the bottom is ${bottom === 'sun' ? 'sun' : 'moon'}, the top cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[size - 1, col]],
+              'Adjacent Equals Constraint Rule',
+              `Column ${col + 1} has ${value === 'sun' ? 'sun' : 'moon'} at row ${row + 1}. Directly above it, the cells at rows ${r1 + 1} and ${r2 + 1} are connected by a vertical equals constraint (=), so they must be equal. To avoid three ${value === 'sun' ? 'suns' : 'moons'} in a row, these cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling row ${r1 + 1}.`,
+              [[row, col]],
               [r1, c1],
-              opposite
-            )
-          }
-          if (c2 === col && val2 === null) {
-            grid[r2][c2] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Column ${col + 1} has ${bottom === 'sun' ? 'sun' : 'moon'} at the bottom (row ${size}). The top cell at row 1 is connected by an equals constraint (=) to column ${otherCol + 1}. Since the bottom is ${bottom === 'sun' ? 'sun' : 'moon'}, the top cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[size - 1, col]],
-              [r2, c2],
               opposite
             )
           }
@@ -1046,120 +1132,56 @@ function applyEndWithEqualsConstraintRule(grid, constraints, size) {
     }
   }
 
-  // Check rows
+  // Check rows - horizontal constraints
   for (let row = 0; row < size; row++) {
-    const left = grid[row][0]
-    const right = grid[row][size - 1]
+    for (let col = 0; col < size; col++) {
+      const value = grid[row][col]
+      if (value === null) continue
 
-    // Check if left is known and right has equals constraint
-    if (left !== null) {
-      // Look for equals constraints involving right cells of this row
+      // Look for horizontal equals constraints in the same row
       for (const [r1, c1, r2, c2] of constraints.equals) {
-        // Check if constraint is at the right of this row (horizontal constraint)
-        if (r1 === row && r2 === row && (c1 === size - 1 || c2 === size - 1)) {
-          const otherCol = c1 === size - 1 ? c2 : c1
-          if (otherCol < size - 2) continue // Only consider if near right
-          
+        // Must be a horizontal constraint in the same row
+        if (r1 !== row || r2 !== row || c1 === c2) continue
+        
+        // The known value must NOT be part of the constraint
+        if ((row === r1 && col === c1) || (row === r2 && col === c2)) continue
+        
+        const minCol = Math.min(c1, c2)
+        const maxCol = Math.max(c1, c2)
+        
+        // Check if constraint is directly to the right (no gap)
+        // One of the constraint cells must be immediately to the right of the known value
+        if (minCol === col + 1) {
           const val1 = grid[r1][c1]
           const val2 = grid[r2][c2]
-          const opposite = left === 'sun' ? 'moon' : 'sun'
+          const opposite = value === 'sun' ? 'moon' : 'sun'
 
-          // If both are empty, they must be opposite to left
           if (val1 === null && val2 === null) {
             grid[r1][c1] = opposite
             return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${left === 'sun' ? 'sun' : 'moon'} at the left (column 1). The right cells at columns ${c1 + 1} and ${c2 + 1} are connected by an equals constraint (=), so they must be equal. Since the left is ${left === 'sun' ? 'sun' : 'moon'}, these right cells must be ${opposite === 'sun' ? 'sun' : 'moon'}. Filling column ${c1 + 1}.`,
-              [[row, 0]],
+              'Adjacent Equals Constraint Rule',
+              `Row ${row + 1} has ${value === 'sun' ? 'sun' : 'moon'} at column ${col + 1}. Directly to the right, the cells at columns ${c1 + 1} and ${c2 + 1} are connected by a horizontal equals constraint (=), so they must be equal. To avoid three ${value === 'sun' ? 'suns' : 'moons'} in a row, these cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling column ${c1 + 1}.`,
+              [[row, col]],
               [r1, c1],
               opposite
             )
           }
         }
 
-        // Check if constraint is vertical at right column involving this row
-        if (c1 === size - 1 && c2 === size - 1 && (r1 === row || r2 === row)) {
-          const otherRow = r1 === row ? r2 : r1
+        // Check if constraint is directly to the left (no gap)
+        // One of the constraint cells must be immediately to the left of the known value
+        if (maxCol === col - 1) {
           const val1 = grid[r1][c1]
           const val2 = grid[r2][c2]
-          const opposite = left === 'sun' ? 'moon' : 'sun'
+          const opposite = value === 'sun' ? 'moon' : 'sun'
 
-          // If the cell in this row is empty, it must be opposite to left
-          if (r1 === row && val1 === null) {
-            grid[r1][c1] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${left === 'sun' ? 'sun' : 'moon'} at the left (column 1). The right cell at column ${size} is connected by an equals constraint (=) to row ${otherRow + 1}. Since the left is ${left === 'sun' ? 'sun' : 'moon'}, the right cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[row, 0]],
-              [r1, c1],
-              opposite
-            )
-          }
-          if (r2 === row && val2 === null) {
-            grid[r2][c2] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${left === 'sun' ? 'sun' : 'moon'} at the left (column 1). The right cell at column ${size} is connected by an equals constraint (=) to row ${otherRow + 1}. Since the left is ${left === 'sun' ? 'sun' : 'moon'}, the right cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[row, 0]],
-              [r2, c2],
-              opposite
-            )
-          }
-        }
-      }
-    }
-
-    // Check if right is known and left has equals constraint
-    if (right !== null) {
-      // Look for equals constraints involving left cells of this row
-      for (const [r1, c1, r2, c2] of constraints.equals) {
-        // Check if constraint is at the left of this row (horizontal constraint)
-        if (r1 === row && r2 === row && (c1 === 0 || c2 === 0)) {
-          const otherCol = c1 === 0 ? c2 : c1
-          if (otherCol > 1) continue // Only consider if near left
-          
-          const val1 = grid[r1][c1]
-          const val2 = grid[r2][c2]
-          const opposite = right === 'sun' ? 'moon' : 'sun'
-
-          // If both are empty, they must be opposite to right
           if (val1 === null && val2 === null) {
             grid[r1][c1] = opposite
             return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${right === 'sun' ? 'sun' : 'moon'} at the right (column ${size}). The left cells at columns ${c1 + 1} and ${c2 + 1} are connected by an equals constraint (=), so they must be equal. Since the right is ${right === 'sun' ? 'sun' : 'moon'}, these left cells must be ${opposite === 'sun' ? 'sun' : 'moon'}. Filling column ${c1 + 1}.`,
-              [[row, size - 1]],
+              'Adjacent Equals Constraint Rule',
+              `Row ${row + 1} has ${value === 'sun' ? 'sun' : 'moon'} at column ${col + 1}. Directly to the left, the cells at columns ${c1 + 1} and ${c2 + 1} are connected by a horizontal equals constraint (=), so they must be equal. To avoid three ${value === 'sun' ? 'suns' : 'moons'} in a row, these cells must be ${opposite === 'sun' ? 'suns' : 'moons'}. Filling column ${c1 + 1}.`,
+              [[row, col]],
               [r1, c1],
-              opposite
-            )
-          }
-        }
-
-        // Check if constraint is vertical at left column involving this row
-        if (c1 === 0 && c2 === 0 && (r1 === row || r2 === row)) {
-          const otherRow = r1 === row ? r2 : r1
-          const val1 = grid[r1][c1]
-          const val2 = grid[r2][c2]
-          const opposite = right === 'sun' ? 'moon' : 'sun'
-
-          // If the cell in this row is empty, it must be opposite to right
-          if (r1 === row && val1 === null) {
-            grid[r1][c1] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${right === 'sun' ? 'sun' : 'moon'} at the right (column ${size}). The left cell at column 1 is connected by an equals constraint (=) to row ${otherRow + 1}. Since the right is ${right === 'sun' ? 'sun' : 'moon'}, the left cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[row, size - 1]],
-              [r1, c1],
-              opposite
-            )
-          }
-          if (r2 === row && val2 === null) {
-            grid[r2][c2] = opposite
-            return new SolvingStep(
-              'End with Equals Constraint Rule',
-              `Row ${row + 1} has ${right === 'sun' ? 'sun' : 'moon'} at the right (column ${size}). The left cell at column 1 is connected by an equals constraint (=) to row ${otherRow + 1}. Since the right is ${right === 'sun' ? 'sun' : 'moon'}, the left cell must be ${opposite === 'sun' ? 'sun' : 'moon'}.`,
-              [[row, size - 1]],
-              [r2, c2],
               opposite
             )
           }

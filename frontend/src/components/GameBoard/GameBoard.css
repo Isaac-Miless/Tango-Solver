@@ -23,9 +23,14 @@
   grid-column: 2;
   grid-row: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* Board is always in the exact same centered position */
+  overflow: visible;
+  width: fit-content;
+  /* Fixed position - never shifts */
+  position: relative;
+  gap: 1rem;
 }
 
 /* Step history wrapper - appears in right column when present */
@@ -35,18 +40,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* When step history is not present, right column is empty but structure remains */
-
-.game-board-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: visible;
-  width: fit-content;
-  /* Fixed position - never shifts */
-  position: relative;
 }
 
 .loading {
@@ -77,7 +70,10 @@
 
 .game-controls {
   text-align: center;
-  margin-bottom: 1.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .control-buttons {
@@ -266,20 +262,19 @@
     justify-content: center;
   }
   
-  /* Make step history wrapper match board wrapper width */
+  /* Make step history wrapper full width (matching game-rules width) */
   .step-history-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* Width will be set by JavaScript to match board */
     margin: 0 auto;
     width: 100%;
     grid-column: 1;
     grid-row: 2;
   }
   
-  /* Match the board's width by constraining the panel to the same width as the board */
+  /* Panel should use full width of wrapper */
   .step-history-wrapper .step-history-panel {
     width: 100%;
     max-width: 100%;
