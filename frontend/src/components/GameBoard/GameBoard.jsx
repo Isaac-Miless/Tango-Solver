@@ -3,7 +3,7 @@ import Cell from '../Cell/Cell'
 import ConstraintToolbar from '../ConstraintToolbar/ConstraintToolbar'
 import { checkWin } from '../../utils/gameLogic'
 import { validateStartingPosition } from '../../utils/validator'
-import { solvePuzzle } from '../../utils/solver'
+import { solvePuzzle, getNextStep } from '../../utils/solver'
 import './GameBoard.css'
 
 const GRID_SIZE = 6
@@ -18,8 +18,20 @@ function GameBoard() {
   const [draggingConstraint, setDraggingConstraint] = useState(null) // 'equals' or 'notEquals'
   const [validationError, setValidationError] = useState(null)
   const [isSolving, setIsSolving] = useState(false)
+  const [lockedCells, setLockedCells] = useState(() => 
+    Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false))
+  )
+  const [stepByStepMode, setStepByStepMode] = useState(false)
+  const [currentStep, setCurrentStep] = useState(null)
+  const [highlightedCells, setHighlightedCells] = useState(new Set())
+  const [solvingExplanation, setSolvingExplanation] = useState(null)
 
   const handleCellClick = (row, col) => {
+    // Don't allow editing locked cells
+    if (lockedCells[row][col]) {
+      return
+    }
+
     const newGrid = grid.map(r => [...r])
     const currentValue = newGrid[row][col]
     
@@ -107,12 +119,21 @@ function GameBoard() {
     setConstraints({ equals: [], notEquals: [] })
     setIsComplete(false)
     setValidationError(null)
+    setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
+    setStepByStepMode(false)
+    setCurrentStep(null)
+    setHighlightedCells(new Set())
+    setSolvingExplanation(null)
   }
 
   const handleSolve = () => {
     // Clear previous errors
     setValidationError(null)
     setIsSolving(true)
+    setStepByStepMode(false)
+    setCurrentStep(null)
+    setHighlightedCells(new Set())
+    setSolvingExplanation(null)
 
     // Validate starting position
     const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
@@ -123,22 +144,112 @@ function GameBoard() {
       return
     }
 
+    // Lock all cells that have values (starting cells)
+    const newLockedCells = grid.map((row, rowIndex) =>
+      row.map((cell, colIndex) => cell !== null)
+    )
+    setLockedCells(newLockedCells)
+
     // Attempt to solve
     try {
       const solvedGrid = solvePuzzle(grid, constraints, GRID_SIZE)
       
       if (solvedGrid === null) {
-        setValidationError('Puzzle could not be solved. The solver is not yet implemented or the puzzle is unsolvable.')
+        // Unlock cells on failure
+        setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
+        setValidationError('Puzzle could not be solved.')
       } else {
+        // Keep cells locked and update with solution
         setGrid(solvedGrid)
         setIsComplete(checkWin(solvedGrid, GRID_SIZE))
         setValidationError(null)
       }
     } catch (error) {
+      // Unlock cells on error
+      setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
       setValidationError(`Error solving puzzle: ${error.message}`)
     } finally {
       setIsSolving(false)
     }
+  }
+
+  const handleSolveStepByStep = () => {
+    // Clear previous errors
+    setValidationError(null)
+    setStepByStepMode(true)
+    setCurrentStep(null)
+    setHighlightedCells(new Set())
+    setSolvingExplanation(null)
+
+    // Validate starting position
+    const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
+    
+    if (!validation.isValid) {
+      setValidationError(validation.errors.join('. '))
+      setStepByStepMode(false)
+      return
+    }
+
+    // Lock all cells that have values (starting cells)
+    const newLockedCells = grid.map((row, rowIndex) =>
+      row.map((cell, colIndex) => cell !== null)
+    )
+    setLockedCells(newLockedCells)
+
+    // Get first step
+    handleNextStep()
+  }
+
+  const handleNextStep = () => {
+    try {
+      const step = getNextStep(grid, constraints, GRID_SIZE)
+      
+      if (!step) {
+        setValidationError('No more moves can be made. Puzzle may be unsolvable or complete.')
+        setStepByStepMode(false)
+        setCurrentStep(null)
+        setHighlightedCells(new Set())
+        setSolvingExplanation(null)
+        return
+      }
+
+      // Apply the step
+      const newGrid = grid.map(row => row.slice())
+      newGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
+      setGrid(newGrid)
+
+      // Set highlighting
+      const highlightSet = new Set()
+      step.affectedCells.forEach(([r, c]) => {
+        highlightSet.add(`${r},${c}`)
+      })
+      highlightSet.add(`${step.resultCell[0]},${step.resultCell[1]}`)
+      setHighlightedCells(highlightSet)
+
+      // Set explanation
+      setSolvingExplanation({
+        ruleName: step.ruleName,
+        explanation: step.explanation
+      })
+      setCurrentStep(step)
+
+      // Check if complete
+      if (checkWin(newGrid, GRID_SIZE)) {
+        setIsComplete(true)
+        setStepByStepMode(false)
+        setHighlightedCells(new Set())
+      }
+    } catch (error) {
+      setValidationError(`Error solving step: ${error.message}`)
+      setStepByStepMode(false)
+    }
+  }
+
+  const handleStopStepByStep = () => {
+    setStepByStepMode(false)
+    setCurrentStep(null)
+    setHighlightedCells(new Set())
+    setSolvingExplanation(null)
   }
 
   return (
@@ -164,6 +275,14 @@ function GameBoard() {
                   )
                 }
                 
+                const cellKey = `${rowIndex},${colIndex}`
+                const isHighlighted = highlightedCells.has(cellKey)
+                const isResultCell = currentStep && 
+                  currentStep.resultCell[0] === rowIndex && 
+                  currentStep.resultCell[1] === colIndex
+                const isAffectedCell = currentStep && 
+                  currentStep.affectedCells.some(([r, c]) => r === rowIndex && c === colIndex)
+
                 return (
                   <Cell
                     key={`${rowIndex}-${colIndex}`}
@@ -176,6 +295,10 @@ function GameBoard() {
                     onEdgeDrop={handleEdgeDrop}
                     onConstraintRemove={handleConstraintRemove}
                     draggingConstraint={draggingConstraint}
+                    isLocked={lockedCells[rowIndex][colIndex]}
+                    isHighlighted={isHighlighted}
+                    isResultCell={isResultCell}
+                    isAffectedCell={isAffectedCell}
                   />
                 )
               })}
@@ -189,14 +312,46 @@ function GameBoard() {
           <button className="reset-button" onClick={clearGrid}>
             Clear Grid
           </button>
-          <button 
-            className="solve-button" 
-            onClick={handleSolve}
-            disabled={isSolving}
-          >
-            {isSolving ? 'Solving...' : 'Solve Puzzle'}
-          </button>
+          {!stepByStepMode ? (
+            <>
+              <button 
+                className="solve-button" 
+                onClick={handleSolve}
+                disabled={isSolving}
+              >
+                {isSolving ? 'Solving...' : 'Solve All'}
+              </button>
+              <button 
+                className="solve-button step-button" 
+                onClick={handleSolveStepByStep}
+                disabled={isSolving}
+              >
+                Solve Step-by-Step
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                className="solve-button step-button" 
+                onClick={handleNextStep}
+              >
+                Next Step
+              </button>
+              <button 
+                className="reset-button" 
+                onClick={handleStopStepByStep}
+              >
+                Stop
+              </button>
+            </>
+          )}
         </div>
+        {solvingExplanation && (
+          <div className="solving-explanation">
+            <div className="explanation-rule">{solvingExplanation.ruleName}</div>
+            <div className="explanation-text">{solvingExplanation.explanation}</div>
+          </div>
+        )}
         {validationError && (
           <div className="error-message">
             ⚠️ {validationError}

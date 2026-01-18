@@ -10,7 +10,11 @@ function Cell({
   gridSize,
   onEdgeDrop,
   onConstraintRemove,
-  draggingConstraint
+  draggingConstraint,
+  isLocked,
+  isHighlighted,
+  isResultCell,
+  isAffectedCell
 }) {
   const [hoveredEdge, setHoveredEdge] = useState(null)
 
@@ -133,8 +137,20 @@ function Cell({
     )
   }
 
+  const cellClasses = [
+    'cell',
+    value ? `cell-${value}` : '',
+    isLocked ? 'cell-locked' : '',
+    isHighlighted ? 'cell-highlighted' : '',
+    isResultCell ? 'cell-result' : '',
+    isAffectedCell ? 'cell-affected' : ''
+  ].filter(Boolean).join(' ')
+
   return (
-    <div className={`cell ${value ? `cell-${value}` : ''}`} onClick={onClick}>
+    <div 
+      className={cellClasses}
+      onClick={onClick}
+    >
       <span className="cell-symbol">{getSymbol()}</span>
       
       {/* Edge drop zones */}

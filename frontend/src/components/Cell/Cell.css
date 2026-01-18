@@ -20,9 +20,25 @@
   padding: 0;
 }
 
-.cell:hover {
+.cell:hover:not(.cell-locked) {
   background: #f0f0f0;
   border-color: #667eea;
+}
+
+.cell-locked {
+  background: #e0e0e0 !important;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.cell-locked.cell-sun {
+  background: #e8e0c0 !important;
+  border-color: #d4c080;
+}
+
+.cell-locked.cell-moon {
+  background: #c8d4e0 !important;
+  border-color: #3a7bc2;
 }
 
 .cell-sun {
@@ -33,6 +49,45 @@
 .cell-moon {
   background: #e6f3ff;
   border-color: #4a90e2;
+}
+
+/* Highlighting styles for step-by-step solving */
+.cell-highlighted {
+  animation: highlight-pulse 1.5s ease-in-out infinite;
+}
+
+.cell-affected {
+  background: #fff3cd !important;
+  border-color: #ffc107 !important;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.cell-result {
+  background: #d4edda !important;
+  border-color: #28a745 !important;
+  box-shadow: 0 0 15px rgba(40, 167, 69, 0.7);
+  animation: result-pulse 1s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+  }
+}
+
+@keyframes result-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .cell-symbol {
