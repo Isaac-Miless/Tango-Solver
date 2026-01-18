@@ -67,3 +67,65 @@
   color: #dc3545;
 }
 
+/* Responsive styles */
+@media (max-width: 768px) {
+  .constraint-toolbar {
+    padding: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .toolbar-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.625rem;
+  }
+  
+  .toolbar-items {
+    gap: 0.75rem;
+  }
+  
+  .constraint-item {
+    padding: 0.625rem 1rem;
+    min-width: 70px;
+  }
+  
+  .constraint-symbol {
+    font-size: 1.3rem;
+  }
+  
+  .constraint-label {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .constraint-toolbar {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+  }
+  
+  .toolbar-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .toolbar-items {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .constraint-item {
+    padding: 0.5rem 0.75rem;
+    min-width: 60px;
+    flex: 1 1 auto;
+  }
+  
+  .constraint-symbol {
+    font-size: 1.2rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  .constraint-label {
+    font-size: 0.65rem;
+  }
+}

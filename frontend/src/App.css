@@ -9,7 +9,23 @@
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   padding: 2rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Responsive padding for main content */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.75rem;
+  }
 }
 

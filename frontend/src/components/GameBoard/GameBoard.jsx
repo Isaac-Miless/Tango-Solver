@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Cell from '../Cell/Cell'
 import ConstraintToolbar from '../ConstraintToolbar/ConstraintToolbar'
+import StepHistoryPanel from '../StepHistoryPanel/StepHistoryPanel'
 import { checkWin } from '../../utils/gameLogic'
 import { validateStartingPosition } from '../../utils/validator'
-import { solvePuzzle, getNextStep } from '../../utils/solver'
+import { solvePuzzle, solvePuzzleStepByStep, getNextStep } from '../../utils/solver'
 import './GameBoard.css'
 
 const GRID_SIZE = 6
@@ -25,6 +26,59 @@ function GameBoard() {
   const [currentStep, setCurrentStep] = useState(null)
   const [highlightedCells, setHighlightedCells] = useState(new Set())
   const [solvingExplanation, setSolvingExplanation] = useState(null)
+  const [allSteps, setAllSteps] = useState([])
+  const [viewingStepIndex, setViewingStepIndex] = useState(null)
+  const [isViewingHistory, setIsViewingHistory] = useState(false)
+  const [initialGrid, setInitialGrid] = useState(null)
+  const [latestGrid, setLatestGrid] = useState(null) // Track the latest/final grid state
+  const boardRef = useRef(null)
+  const stepHistoryWrapperRef = useRef(null)
+  
+  // Match step history width to board width when stacked, and height to board height
+  useEffect(() => {
+    const matchDimensions = () => {
+      if (boardRef.current && stepHistoryWrapperRef.current) {
+        const boardRect = boardRef.current.getBoundingClientRect()
+        const boardWidth = boardRect.width
+        const boardHeight = boardRect.height
+        
+        if (window.innerWidth <= 1024) {
+          // When stacked (mobile/tablet), match width
+          if (boardWidth > 0) {
+            stepHistoryWrapperRef.current.style.width = `${boardWidth}px`
+            stepHistoryWrapperRef.current.style.maxWidth = `${boardWidth}px`
+            stepHistoryWrapperRef.current.style.minWidth = `${boardWidth}px`
+          }
+        } else {
+          // When side-by-side (desktop), reset width but match height
+          stepHistoryWrapperRef.current.style.width = ''
+          stepHistoryWrapperRef.current.style.maxWidth = ''
+          stepHistoryWrapperRef.current.style.minWidth = ''
+        }
+        
+        // Always match height to board height (for max-height of panel)
+        if (boardHeight > 0 && stepHistoryWrapperRef.current) {
+          const stepHistoryPanel = stepHistoryWrapperRef.current.querySelector('.step-history-panel')
+          if (stepHistoryPanel) {
+            stepHistoryPanel.style.maxHeight = `${boardHeight}px`
+          }
+        }
+      }
+    }
+    
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    const rafId = requestAnimationFrame(() => {
+      matchDimensions()
+      // Also check after a small delay to catch any late renders
+      setTimeout(matchDimensions, 100)
+    })
+    
+    window.addEventListener('resize', matchDimensions)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', matchDimensions)
+    }
+  }, [grid, allSteps.length, isViewingHistory])
 
   const handleCellClick = (row, col) => {
     // Don't allow editing locked cells
@@ -124,6 +178,11 @@ function GameBoard() {
     setCurrentStep(null)
     setHighlightedCells(new Set())
     setSolvingExplanation(null)
+    setAllSteps([])
+    setViewingStepIndex(null)
+    setIsViewingHistory(false)
+    setInitialGrid(null)
+    setLatestGrid(null)
   }
 
   const handleSolve = () => {
@@ -134,6 +193,15 @@ function GameBoard() {
     setCurrentStep(null)
     setHighlightedCells(new Set())
     setSolvingExplanation(null)
+    setViewingStepIndex(null)
+    setIsViewingHistory(false)
+
+    // Check if puzzle is already solved
+    if (checkWin(grid, GRID_SIZE)) {
+      setValidationError('Puzzle is already solved!')
+      setIsSolving(false)
+      return
+    }
 
     // Validate starting position
     const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
@@ -149,18 +217,29 @@ function GameBoard() {
       row.map((cell, colIndex) => cell !== null)
     )
     setLockedCells(newLockedCells)
+    
+    // Save initial grid state
+    setInitialGrid(grid.map(row => row.slice()))
 
-    // Attempt to solve
+    // Attempt to solve and get all steps
     try {
-      const solvedGrid = solvePuzzle(grid, constraints, GRID_SIZE)
+      const steps = solvePuzzleStepByStep(grid, constraints, GRID_SIZE)
+      setAllSteps(steps)
       
-      if (solvedGrid === null) {
+      if (steps.length === 0) {
         // Unlock cells on failure
         setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
         setValidationError('Puzzle could not be solved.')
       } else {
+        // Apply all steps to get final solution
+        const solvedGrid = grid.map(row => row.slice())
+        steps.forEach(step => {
+          solvedGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
+        })
+        
         // Keep cells locked and update with solution
         setGrid(solvedGrid)
+        setLatestGrid(solvedGrid.map(row => row.slice())) // Store latest grid
         setIsComplete(checkWin(solvedGrid, GRID_SIZE))
         setValidationError(null)
       }
@@ -180,6 +259,16 @@ function GameBoard() {
     setCurrentStep(null)
     setHighlightedCells(new Set())
     setSolvingExplanation(null)
+    setAllSteps([])
+    setViewingStepIndex(null)
+    setIsViewingHistory(false)
+
+    // Check if puzzle is already solved
+    if (checkWin(grid, GRID_SIZE)) {
+      setValidationError('Puzzle is already solved!')
+      setStepByStepMode(false)
+      return
+    }
 
     // Validate starting position
     const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
@@ -195,6 +284,11 @@ function GameBoard() {
       row.map((cell, colIndex) => cell !== null)
     )
     setLockedCells(newLockedCells)
+    
+    // Save initial grid state
+    const initialGridState = grid.map(row => row.slice())
+    setInitialGrid(initialGridState)
+    setLatestGrid(initialGridState) // Initialize latest grid to starting state
 
     // Get first step
     handleNextStep()
@@ -202,7 +296,10 @@ function GameBoard() {
 
   const handleNextStep = () => {
     try {
-      const step = getNextStep(grid, constraints, GRID_SIZE)
+      // If viewing history, use the latest grid state instead of current displayed grid
+      const gridToUse = isViewingHistory && latestGrid ? latestGrid : grid
+      
+      const step = getNextStep(gridToUse, constraints, GRID_SIZE)
       
       if (!step) {
         setValidationError('No more moves can be made. Puzzle may be unsolvable or complete.')
@@ -213,10 +310,24 @@ function GameBoard() {
         return
       }
 
-      // Apply the step
-      const newGrid = grid.map(row => row.slice())
+      // If we were viewing history, exit history view first
+      if (isViewingHistory) {
+        setIsViewingHistory(false)
+        setViewingStepIndex(null)
+        // Restore to latest grid state
+        if (latestGrid) {
+          setGrid(latestGrid.map(row => row.slice()))
+        }
+      }
+
+      // Add step to history
+      setAllSteps(prev => [...prev, step])
+
+      // Apply the step to the grid we're using
+      const newGrid = gridToUse.map(row => row.slice())
       newGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
       setGrid(newGrid)
+      setLatestGrid(newGrid.map(row => row.slice())) // Update latest grid
 
       // Set highlighting
       const highlightSet = new Set()
@@ -250,6 +361,58 @@ function GameBoard() {
     setCurrentStep(null)
     setHighlightedCells(new Set())
     setSolvingExplanation(null)
+    setIsViewingHistory(false)
+    setViewingStepIndex(null)
+  }
+
+  const handleStepClick = (stepIndex) => {
+    if (stepIndex < 0 || stepIndex >= allSteps.length) return
+
+    const step = allSteps[stepIndex]
+    setIsViewingHistory(true)
+    setViewingStepIndex(stepIndex)
+
+    // Show the grid state after this step (so user can see the move that was made)
+    if (step.gridStateAfter) {
+      setGrid(step.gridStateAfter.map(row => row.slice()))
+    } else if (step.gridStateBefore) {
+      // Fallback: if after state not available, use before and apply the step
+      const gridAfter = step.gridStateBefore.map(row => row.slice())
+      gridAfter[step.resultCell[0]][step.resultCell[1]] = step.resultValue
+      setGrid(gridAfter)
+    }
+
+    // Set highlighting for this step
+    const highlightSet = new Set()
+    step.affectedCells.forEach(([r, c]) => {
+      highlightSet.add(`${r},${c}`)
+    })
+    highlightSet.add(`${step.resultCell[0]},${step.resultCell[1]}`)
+    setHighlightedCells(highlightSet)
+
+    // Set explanation
+    setSolvingExplanation({
+      ruleName: step.ruleName,
+      explanation: step.explanation
+    })
+    setCurrentStep(step)
+  }
+
+  const handleExitHistoryView = () => {
+    setIsViewingHistory(false)
+    setViewingStepIndex(null)
+    setHighlightedCells(new Set())
+    setSolvingExplanation(null)
+    setCurrentStep(null)
+    
+    // Restore to final state (apply all steps from initial grid)
+    if (allSteps.length > 0 && initialGrid) {
+      const finalGrid = initialGrid.map(row => row.slice())
+      allSteps.forEach(step => {
+        finalGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
+      })
+      setGrid(finalGrid)
+    }
   }
 
   return (
@@ -259,8 +422,9 @@ function GameBoard() {
         onDragEnd={() => setDraggingConstraint(null)}
       />
       
-      <div className="game-board-wrapper">
-        <div className="game-board">
+      <div className="game-layout">
+        <div className="game-board-wrapper">
+          <div className="game-board" ref={boardRef}>
           {grid.map((row, rowIndex) => (
             <div key={rowIndex} className="game-row">
               {row.map((cell, colIndex) => {
@@ -304,7 +468,26 @@ function GameBoard() {
               })}
             </div>
           ))}
+          </div>
         </div>
+        
+        {allSteps.length > 0 && (
+          <div className="step-history-wrapper" ref={stepHistoryWrapperRef}>
+            {isViewingHistory && (
+              <button 
+                className="exit-history-button"
+                onClick={handleExitHistoryView}
+              >
+                Exit History View
+              </button>
+            )}
+            <StepHistoryPanel
+              steps={allSteps}
+              selectedStepIndex={viewingStepIndex}
+              onStepClick={handleStepClick}
+            />
+          </div>
+        )}
       </div>
       
       <div className="game-controls">

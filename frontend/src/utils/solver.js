@@ -11,12 +11,14 @@
  * Represents a solving step with explanation
  */
 export class SolvingStep {
-  constructor(ruleName, explanation, affectedCells, resultCell, resultValue) {
+  constructor(ruleName, explanation, affectedCells, resultCell, resultValue, gridStateBefore = null, gridStateAfter = null) {
     this.ruleName = ruleName
     this.explanation = explanation
     this.affectedCells = affectedCells // Array of [row, col] pairs
     this.resultCell = resultCell // [row, col]
     this.resultValue = resultValue // 'sun' or 'moon'
+    this.gridStateBefore = gridStateBefore // Grid state before this step
+    this.gridStateAfter = gridStateAfter // Grid state after this step
   }
 }
 
@@ -36,10 +38,20 @@ export function solvePuzzleStepByStep(grid, constraints, size) {
   while (iterations < maxIterations) {
     let madeProgress = false
 
+    // Save grid state before applying rule
+    const gridStateBefore = gridCopy.map(row => row.slice())
+
     // Apply all rules in order
     const step = applyAllRules(gridCopy, constraints, size)
     
     if (step) {
+      // Save grid state after applying rule
+      const gridStateAfter = gridCopy.map(row => row.slice())
+      
+      // Add grid states to step
+      step.gridStateBefore = gridStateBefore
+      step.gridStateAfter = gridStateAfter
+      
       steps.push(step)
       madeProgress = true
     }
@@ -69,7 +81,17 @@ export function solvePuzzleStepByStep(grid, constraints, size) {
  */
 export function getNextStep(grid, constraints, size) {
   const gridCopy = grid.map(row => row.slice())
-  return applyAllRules(gridCopy, constraints, size)
+  const gridStateBefore = grid.map(row => row.slice())
+  
+  const step = applyAllRules(gridCopy, constraints, size)
+  
+  if (step) {
+    const gridStateAfter = gridCopy.map(row => row.slice())
+    step.gridStateBefore = gridStateBefore
+    step.gridStateAfter = gridStateAfter
+  }
+  
+  return step
 }
 
 /**
