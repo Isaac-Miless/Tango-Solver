@@ -131,6 +131,35 @@ frontend/
 
 The solver uses constraint propagation and logical deduction rather than brute-force backtracking, making it efficient and educational. Each rule is implemented as a separate function that can be easily extended or modified.
 
+## Deployment
+
+This project is configured for deployment to GitHub Pages.
+
+### Automatic Deployment (Recommended)
+
+1. Push your code to GitHub
+2. Go to your repository settings
+3. Navigate to **Pages** in the left sidebar
+4. Under **Source**, select **GitHub Actions**
+5. The workflow will automatically build and deploy when you push to the `main` branch
+
+### Manual Deployment
+
+1. Build the project:
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. The built files will be in `frontend/dist/`
+
+3. Push the `dist` folder to the `gh-pages` branch (or use GitHub Pages settings)
+
+### Important Notes
+
+- Make sure to update the `base` path in `vite.config.js` if your repository name is different from `Tango-Solver`
+- The site will be available at: `https://[your-username].github.io/Tango-Solver/`
+
 ## License
 
 See LICENSE file for details.
