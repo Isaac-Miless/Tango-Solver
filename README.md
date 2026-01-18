@@ -6,7 +6,9 @@ A beautiful web-based implementation of the Tango logic puzzle game, inspired by
 
 - Interactive puzzle grid with sun ☀️ and moon 🌙 symbols
 - Constraint-based gameplay with equals (=) and not-equals (×) rules
-- Beautiful, modern UI with smooth animations
+- **Intelligent solver** with multiple logical rules
+- **Step-by-step solving mode** with educational explanations
+- **Cell highlighting** during solving to visualize reasoning
 - Responsive design for mobile and desktop
 - Win detection and celebration
 
@@ -43,6 +45,37 @@ npm run dev
 - Cells connected by "=" must have the same symbol
 - Cells connected by "×" must have different symbols
 
+## Solver Features
+
+The solver implements a comprehensive set of logical rules to solve puzzles step-by-step:
+
+### Solving Modes
+
+1. **Solve All**: Automatically solves the entire puzzle at once
+2. **Solve Step-by-Step**: Interactive mode that shows one move at a time with explanations
+
+### Implemented Solving Rules
+
+1. **No-Three Rule**: If two equal cells are adjacent, neighboring cells must be opposite to avoid three in a row
+2. **Parity Rule**: When a row/column reaches half capacity of one symbol, remaining cells must be the opposite
+3. **Constraint Propagation**: Equals and not-equals constraints propagate values between connected cells
+4. **Edge Case Rule**: If cells at both ends are equal, inner cells must be opposite
+5. **Gap Rule**: If pattern X _ X exists, the middle must be opposite
+6. **Two Equals at End Rule**: If two equal cells are at one end, the opposite end must be opposite
+7. **Second-to-Last Equals First Rule**: If second-to-last equals first, the end must be opposite
+8. **Modifier Balance Rule**: Uses constraint information with row/column balance to deduce values
+9. **End with Equals Constraint Rule**: If one end is known and the other has equals constraints, those cells must be opposite
+
+### Step-by-Step Mode Features
+
+- **Visual Highlighting**: 
+  - Yellow highlight for cells used in reasoning (affected cells)
+  - Green highlight for the cell being filled (result cell)
+- **Educational Explanations**: Each step includes:
+  - Rule name
+  - Detailed explanation of why the move is made
+  - Reference to specific cells and positions
+
 ## Project Structure
 
 ```
@@ -57,11 +90,16 @@ frontend/
 │   │   ├── Cell/
 │   │   │   ├── Cell.jsx
 │   │   │   └── Cell.css
+│   │   ├── ConstraintToolbar/
+│   │   │   ├── ConstraintToolbar.jsx
+│   │   │   └── ConstraintToolbar.css
 │   │   └── Header/
 │   │       ├── Header.jsx
 │   │       └── Header.css
 │   ├── utils/
-│   │   └── gameLogic.js
+│   │   ├── gameLogic.js      # Game logic and validation
+│   │   ├── solver.js         # Solving algorithms and rules
+│   │   └── validator.js      # Starting position validation
 │   ├── styles/
 │   │   └── index.css
 │   ├── App.jsx
@@ -76,6 +114,22 @@ frontend/
 - React 18
 - Vite
 - CSS3 (with modern features like backdrop-filter and animations)
+
+## How to Use the Solver
+
+1. **Set up your puzzle**: Place some initial sun/moon symbols and add constraints (= or ×) between cells
+2. **Choose solving mode**:
+   - Click "Solve All" to automatically solve the entire puzzle
+   - Click "Solve Step-by-Step" to see each move explained
+3. **In step-by-step mode**:
+   - Click "Next Step" to see the next logical move
+   - Read the explanation to understand the reasoning
+   - Observe the highlighted cells to see which cells are involved
+   - Click "Stop" to exit step-by-step mode at any time
+
+## Development Notes
+
+The solver uses constraint propagation and logical deduction rather than brute-force backtracking, making it efficient and educational. Each rule is implemented as a separate function that can be easily extended or modified.
 
 ## License
 
