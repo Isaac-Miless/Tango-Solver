@@ -474,7 +474,15 @@ function GameBoard() {
           </div>
           
           <div className="game-controls">
-        <div className="control-buttons">
+            {isViewingHistory && (
+              <button 
+                className="exit-history-button"
+                onClick={handleExitHistoryView}
+              >
+                Exit History View
+              </button>
+            )}
+            <div className="control-buttons">
           <button className="reset-button" onClick={clearGrid}>
             Clear Grid
           </button>
@@ -533,14 +541,6 @@ function GameBoard() {
         
         {allSteps.length > 0 && (
           <div className="step-history-wrapper" ref={stepHistoryWrapperRef}>
-            {isViewingHistory && (
-              <button 
-                className="exit-history-button"
-                onClick={handleExitHistoryView}
-              >
-                Exit History View
-              </button>
-            )}
             <StepHistoryPanel
               steps={allSteps}
               selectedStepIndex={viewingStepIndex}
