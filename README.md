@@ -1,14 +1,14 @@
 # Tango Solver
 
-A beautiful web-based implementation of the Tango logic puzzle game, inspired by LinkedIn's Tango game.
+A web-based solver of the Tango logic puzzle game, inspired by LinkedIn's Tango game.
 
 ## Features
 
 - Interactive puzzle grid with sun ☀️ and moon 🌙 symbols
-- Constraint-based gameplay with equals (=) and not-equals (×) rules
 - **Intelligent solver** with multiple logical rules
 - **Step-by-step solving mode** with educational explanations
 - **Cell highlighting** during solving to visualize reasoning
+- **Step history** to see previous moves, and what the appled rule was
 - Responsive design for mobile and desktop
 - Win detection and celebration
 
@@ -31,12 +31,12 @@ The solver implements a comprehensive set of logical rules to solve puzzles step
 ### Implemented Solving Rules
 
 1. **No-Three Rule**: If two equal cells are adjacent, neighboring cells must be opposite to avoid three in a row
-2. **Parity Rule**: When a row/column reaches half capacity of one symbol, remaining cells must be the opposite
+2. **Parity Rule**: When a row/column has 3 of one symbol, remaining cells must be the opposite
 3. **Constraint Propagation**: Equals and not-equals constraints propagate values between connected cells
 4. **Edge Case Rule**: If cells at both ends are equal, inner cells must be opposite
 5. **Gap Rule**: If pattern X _ X exists, the middle must be opposite
 6. **Two Equals at End Rule**: If two equal cells are at one end, the opposite end must be opposite
-7. **Second-to-Last Equals First Rule**: If second-to-last equals first, the end must be opposite
+7. **Second-to-Last Equals First Rule**: If second-to-last equals the first cell in a row/col, the end must be opposite
 8. **Modifier Balance Rule**: Uses constraint information with row/column balance to deduce values
 9. **End with Equals Constraint Rule**: If one end is known and the other has equals constraints, those cells must be opposite
 
@@ -93,7 +93,7 @@ frontend/
 
 1. **Set up your puzzle**: Place some initial sun/moon symbols and add constraints (= or ×) between cells
 2. **Choose solving mode**:
-   - Click "Solve All" to automatically solve the entire puzzle
+   - Click "Solve All" to automatically solve the entire puzzle (step history available in a side panel)
    - Click "Solve Step-by-Step" to see each move explained
 3. **In step-by-step mode**:
    - Click "Next Step" to see the next logical move
@@ -103,7 +103,7 @@ frontend/
 
 ## Development Notes
 
-The solver uses constraint propagation and logical deduction rather than brute-force backtracking, making it efficient and educational. Each rule is implemented as a separate function that can be easily extended or modified.
+The solver uses constraint propagation and logical deduction rather than brute-force backtracking, making it efficient and educational. This means that there is no backtracking in the solver, so puzzles that are not completely deterministic (most are, but in some cases not) cannot be solved. Each rule is implemented as a separate function that can be easily extended or modified.
 
 ## License
 
