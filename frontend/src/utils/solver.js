@@ -62,7 +62,7 @@ export function solvePuzzleStepByStep(grid, constraints, size) {
     }
 
     if (!madeProgress) {
-      // No more forced moves - puzzle might be unsolvable or needs backtracking
+      // No more deterministic moves - puzzle might be unsolvable or needs backtracking
       break
     }
 

@@ -11,46 +11,56 @@
 .game-layout {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto;
   gap: 1rem;
   align-items: start;
+  align-content: start;
+  justify-items: center;
   margin-bottom: 2rem;
   width: 100%;
-  /* Three columns: left spacer, board (center), right spacer/step history */
-  /* Reduced gap from 2rem to 1rem to bring panel closer to grid */
-  justify-items: center;
-  /* Ensure grid items don't affect each other's positioning */
-  grid-auto-flow: row;
+  position: relative;
+  transition: grid-template-columns 0.3s ease-in-out;
 }
 
-/* Board wrapper - always in center column, never moves */
 .game-board-wrapper {
   grid-column: 2;
   grid-row: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  overflow: visible;
+  align-self: start;
   width: fit-content;
-  /* Fixed position - never shifts */
   position: relative;
   gap: 1rem;
+  overflow: visible;
+  transition: transform 0.3s ease-in-out, margin 0.3s ease-in-out;
 }
 
-/* Step history wrapper - appears next to grid */
 .step-history-wrapper {
   grid-column: 3;
   grid-row: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Ensure it doesn't affect the grid layout */
+  align-self: start;
   width: fit-content;
   min-width: 0;
-  /* Fixed position - doesn't move based on content below */
-  align-self: start;
-  /* Prevent grid row from expanding based on content */
   height: fit-content;
+  position: relative;
+  top: 0;
+  margin-top: 0;
+  padding-top: 0;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.step-history-wrapper.has-content {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 .loading {
@@ -62,23 +72,21 @@
 
 .game-board {
   display: inline-block;
+  width: auto;
+  padding: 9px;
   border: 3px solid #333;
   border-radius: 8px;
-  overflow: visible;
   background: #f5f5f5;
-  padding: 9px;
+  overflow: visible;
   box-sizing: border-box;
-  /* Ensure board has a defined width for measurement */
-  width: auto;
 }
 
 .game-row {
   display: flex;
   flex-direction: row;
+  position: relative;
   margin: 0;
   padding: 0;
-  position: relative;
-  /* Allow constraints to extend beyond cell boundaries */
 }
 
 .game-controls {
@@ -150,21 +158,20 @@
 }
 
 .solving-explanation {
-  margin-top: 1rem;
+  display: block;
+  width: 60%;
+  max-width: 60%;
+  min-width: 0;
+  margin: 1rem auto;
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border: 2px solid #2196f3;
   border-radius: 10px;
-  text-align: left;
-  /* Fixed width: 60% of the board width (3/5 as requested) */
-  width: 60%;
-  max-width: 60%;
-  min-width: 0;
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
   box-sizing: border-box;
+  text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  /* Prevent it from affecting layout of other elements */
   flex-shrink: 0;
 }
 
@@ -240,15 +247,6 @@
   margin-bottom: 0.5rem;
 }
 
-.step-history-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: fit-content;
-  align-items: center;
-  /* Appears to the right without affecting board */
-  position: relative;
-}
 
 .exit-history-button {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
@@ -288,7 +286,6 @@
     justify-content: center;
   }
   
-  /* Make step history wrapper full width (matching game-rules width) */
   .step-history-wrapper {
     display: flex;
     flex-direction: column;
@@ -300,7 +297,6 @@
     grid-row: 2;
   }
   
-  /* Panel should use full width of wrapper */
   .step-history-wrapper .step-history-panel {
     width: 100%;
     max-width: 100%;

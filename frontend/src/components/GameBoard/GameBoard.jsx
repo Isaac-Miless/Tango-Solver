@@ -11,16 +11,15 @@ import './GameBoard.css'
 const GRID_SIZE = 6
 
 function GameBoard() {
-  // Initialize with blank grid
-  const [grid, setGrid] = useState(() => 
+  const [grid, setGrid] = useState(() =>
     Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
   )
   const [constraints, setConstraints] = useState({ equals: [], notEquals: [] })
   const [isComplete, setIsComplete] = useState(false)
-  const [draggingConstraint, setDraggingConstraint] = useState(null) // 'equals' or 'notEquals'
+  const [draggingConstraint, setDraggingConstraint] = useState(null)
   const [validationError, setValidationError] = useState(null)
   const [isSolving, setIsSolving] = useState(false)
-  const [lockedCells, setLockedCells] = useState(() => 
+  const [lockedCells, setLockedCells] = useState(() =>
     Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false))
   )
   const [stepByStepMode, setStepByStepMode] = useState(false)
@@ -31,36 +30,29 @@ function GameBoard() {
   const [viewingStepIndex, setViewingStepIndex] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
   const [initialGrid, setInitialGrid] = useState(null)
-  const [latestGrid, setLatestGrid] = useState(null) // Track the latest/final grid state
+  const [latestGrid, setLatestGrid] = useState(null)
   const [showConfetti, setShowConfetti] = useState(false)
-  const prevIsCompleteRef = useRef(false) // Track previous isComplete state
+  const prevIsCompleteRef = useRef(false)
   const boardRef = useRef(null)
   const stepHistoryWrapperRef = useRef(null)
-  
-  // Match step history height to board height
+
+  // Match step history panel height to board height
   useEffect(() => {
     const matchDimensions = () => {
       if (boardRef.current && stepHistoryWrapperRef.current) {
-        const boardRect = boardRef.current.getBoundingClientRect()
-        const boardHeight = boardRect.height
-        
-        // Always match height to board height (for max-height of panel)
-        if (boardHeight > 0 && stepHistoryWrapperRef.current) {
-          const stepHistoryPanel = stepHistoryWrapperRef.current.querySelector('.step-history-panel')
-          if (stepHistoryPanel) {
-            stepHistoryPanel.style.maxHeight = `${boardHeight}px`
-          }
+        const boardHeight = boardRef.current.getBoundingClientRect().height
+        const stepHistoryPanel = stepHistoryWrapperRef.current.querySelector('.step-history-panel')
+        if (boardHeight > 0 && stepHistoryPanel) {
+          stepHistoryPanel.style.maxHeight = `${boardHeight}px`
         }
       }
     }
-    
-    // Use requestAnimationFrame to ensure DOM is fully rendered
+
     const rafId = requestAnimationFrame(() => {
       matchDimensions()
-      // Also check after a small delay to catch any late renders
       setTimeout(matchDimensions, 100)
     })
-    
+
     window.addEventListener('resize', matchDimensions)
     return () => {
       cancelAnimationFrame(rafId)
@@ -68,12 +60,10 @@ function GameBoard() {
     }
   }, [grid, allSteps.length, isViewingHistory])
 
-  // Trigger confetti when puzzle is completed
+  // Trigger confetti animation when puzzle is completed
   useEffect(() => {
-    // Only trigger confetti when transitioning from incomplete to complete
     if (isComplete && !prevIsCompleteRef.current) {
       setShowConfetti(true)
-      // Hide confetti after animation completes
       const timeout = setTimeout(() => {
         setShowConfetti(false)
       }, 3000)
@@ -83,14 +73,13 @@ function GameBoard() {
   }, [isComplete])
 
   const handleCellClick = (row, col) => {
-    // Don't allow editing locked cells
     if (lockedCells[row][col]) {
       return
     }
 
     const newGrid = grid.map(r => [...r])
     const currentValue = newGrid[row][col]
-    
+
     // Cycle through: empty -> sun -> moon -> empty
     if (currentValue === null) {
       newGrid[row][col] = 'sun'
@@ -101,48 +90,40 @@ function GameBoard() {
     }
 
     setGrid(newGrid)
-    
-    // Check win condition
-    if (checkWin(newGrid, GRID_SIZE)) {
-      setIsComplete(true)
-    } else {
-      setIsComplete(false)
-    }
+    setIsComplete(checkWin(newGrid, GRID_SIZE))
   }
 
   const handleEdgeDrop = (edge, constraintType) => {
     if (!constraintType) return
 
     let { row1, col1, row2, col2 } = edge
-    
+
     // Normalize constraint: always store with first cell having smaller indices
-    // For horizontal: smaller col first
-    // For vertical: smaller row first
+    // For horizontal constraints: smaller col first
+    // For vertical constraints: smaller row first
     if (row1 === row2) {
-      // Horizontal constraint
       if (col1 > col2) {
         [col1, col2] = [col2, col1]
       }
     } else {
-      // Vertical constraint
       if (row1 > row2) {
         [row1, row2, col1, col2] = [row2, row1, col2, col1]
       }
     }
-    
+
     // Remove any existing constraint on this edge
     setConstraints(prev => ({
-      equals: prev.equals.filter(c => 
+      equals: prev.equals.filter(c =>
         !((c[0] === row1 && c[1] === col1 && c[2] === row2 && c[3] === col2) ||
           (c[0] === row2 && c[1] === col2 && c[2] === row1 && c[3] === col1))
       ),
-      notEquals: prev.notEquals.filter(c => 
+      notEquals: prev.notEquals.filter(c =>
         !((c[0] === row1 && c[1] === col1 && c[2] === row2 && c[3] === col2) ||
           (c[0] === row2 && c[1] === col2 && c[2] === row1 && c[3] === col1))
       )
     }))
 
-    // Add new constraint (normalized)
+    // Add new constraint
     if (constraintType === 'equals') {
       setConstraints(prev => ({
         ...prev,
@@ -159,11 +140,11 @@ function GameBoard() {
   const handleConstraintRemove = (edge) => {
     const { row1, col1, row2, col2 } = edge
     setConstraints(prev => ({
-      equals: prev.equals.filter(c => 
+      equals: prev.equals.filter(c =>
         !((c[0] === row1 && c[1] === col1 && c[2] === row2 && c[3] === col2) ||
           (c[0] === row2 && c[1] === col2 && c[2] === row1 && c[3] === col1))
       ),
-      notEquals: prev.notEquals.filter(c => 
+      notEquals: prev.notEquals.filter(c =>
         !((c[0] === row1 && c[1] === col1 && c[2] === row2 && c[3] === col2) ||
           (c[0] === row2 && c[1] === col2 && c[2] === row1 && c[3] === col1))
       )
@@ -188,7 +169,6 @@ function GameBoard() {
   }
 
   const handleSolve = () => {
-    // Clear previous errors
     setValidationError(null)
     setIsSolving(true)
     setStepByStepMode(false)
@@ -198,16 +178,13 @@ function GameBoard() {
     setViewingStepIndex(null)
     setIsViewingHistory(false)
 
-    // Check if puzzle is already solved
     if (checkWin(grid, GRID_SIZE)) {
       setValidationError('Puzzle is already solved!')
       setIsSolving(false)
       return
     }
 
-    // Validate starting position
     const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
-    
     if (!validation.isValid) {
       setValidationError(validation.errors.join('. '))
       setIsSolving(false)
@@ -219,17 +196,13 @@ function GameBoard() {
       row.map((cell, colIndex) => cell !== null)
     )
     setLockedCells(newLockedCells)
-    
-    // Save initial grid state
     setInitialGrid(grid.map(row => row.slice()))
 
-    // Attempt to solve and get all steps
     try {
       const steps = solvePuzzleStepByStep(grid, constraints, GRID_SIZE)
       setAllSteps(steps)
-      
+
       if (steps.length === 0) {
-        // Unlock cells on failure
         setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
         setValidationError('Puzzle could not be solved.')
       } else {
@@ -238,15 +211,18 @@ function GameBoard() {
         steps.forEach(step => {
           solvedGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
         })
-        
-        // Keep cells locked and update with solution
+
         setGrid(solvedGrid)
-        setLatestGrid(solvedGrid.map(row => row.slice())) // Store latest grid
-        setIsComplete(checkWin(solvedGrid, GRID_SIZE))
+        setLatestGrid(solvedGrid.map(row => row.slice()))
+        const puzzleComplete = checkWin(solvedGrid, GRID_SIZE)
+        setIsComplete(puzzleComplete)
+        if (puzzleComplete) {
+          setShowConfetti(true)
+          setTimeout(() => setShowConfetti(false), 3000)
+        }
         setValidationError(null)
       }
     } catch (error) {
-      // Unlock cells on error
       setLockedCells(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false)))
       setValidationError(`Error solving puzzle: ${error.message}`)
     } finally {
@@ -255,7 +231,6 @@ function GameBoard() {
   }
 
   const handleSolveStepByStep = () => {
-    // Clear previous errors
     setValidationError(null)
     setStepByStepMode(true)
     setCurrentStep(null)
@@ -265,34 +240,27 @@ function GameBoard() {
     setViewingStepIndex(null)
     setIsViewingHistory(false)
 
-    // Check if puzzle is already solved
     if (checkWin(grid, GRID_SIZE)) {
       setValidationError('Puzzle is already solved!')
       setStepByStepMode(false)
       return
     }
 
-    // Validate starting position
     const validation = validateStartingPosition(grid, constraints, GRID_SIZE)
-    
     if (!validation.isValid) {
       setValidationError(validation.errors.join('. '))
       setStepByStepMode(false)
       return
     }
 
-    // Lock all cells that have values (starting cells)
     const newLockedCells = grid.map((row, rowIndex) =>
       row.map((cell, colIndex) => cell !== null)
     )
     setLockedCells(newLockedCells)
-    
-    // Save initial grid state
+
     const initialGridState = grid.map(row => row.slice())
     setInitialGrid(initialGridState)
-    setLatestGrid(initialGridState) // Initialize latest grid to starting state
-
-    // Get first step
+    setLatestGrid(initialGridState)
     handleNextStep()
   }
 
@@ -300,9 +268,8 @@ function GameBoard() {
     try {
       // If viewing history, use the latest grid state instead of current displayed grid
       const gridToUse = isViewingHistory && latestGrid ? latestGrid : grid
-      
       const step = getNextStep(gridToUse, constraints, GRID_SIZE)
-      
+
       if (!step) {
         setValidationError('No more moves can be made. Puzzle may be unsolvable or complete.')
         setStepByStepMode(false)
@@ -316,22 +283,20 @@ function GameBoard() {
       if (isViewingHistory) {
         setIsViewingHistory(false)
         setViewingStepIndex(null)
-        // Restore to latest grid state
         if (latestGrid) {
           setGrid(latestGrid.map(row => row.slice()))
         }
       }
 
-      // Add step to history
       setAllSteps(prev => [...prev, step])
 
-      // Apply the step to the grid we're using
+      // Apply the step to the grid
       const newGrid = gridToUse.map(row => row.slice())
       newGrid[step.resultCell[0]][step.resultCell[1]] = step.resultValue
       setGrid(newGrid)
-      setLatestGrid(newGrid.map(row => row.slice())) // Update latest grid
+      setLatestGrid(newGrid.map(row => row.slice()))
 
-      // Set highlighting
+      // Highlight affected cells and result cell
       const highlightSet = new Set()
       step.affectedCells.forEach(([r, c]) => {
         highlightSet.add(`${r},${c}`)
@@ -339,14 +304,12 @@ function GameBoard() {
       highlightSet.add(`${step.resultCell[0]},${step.resultCell[1]}`)
       setHighlightedCells(highlightSet)
 
-      // Set explanation
       setSolvingExplanation({
         ruleName: step.ruleName,
         explanation: step.explanation
       })
       setCurrentStep(step)
 
-      // Check if complete
       if (checkWin(newGrid, GRID_SIZE)) {
         setIsComplete(true)
         setStepByStepMode(false)
@@ -374,17 +337,14 @@ function GameBoard() {
     setIsViewingHistory(true)
     setViewingStepIndex(stepIndex)
 
-    // Show the grid state after this step (so user can see the move that was made)
     if (step.gridStateAfter) {
       setGrid(step.gridStateAfter.map(row => row.slice()))
     } else if (step.gridStateBefore) {
-      // Fallback: if after state not available, use before and apply the step
       const gridAfter = step.gridStateBefore.map(row => row.slice())
       gridAfter[step.resultCell[0]][step.resultCell[1]] = step.resultValue
       setGrid(gridAfter)
     }
 
-    // Set highlighting for this step
     const highlightSet = new Set()
     step.affectedCells.forEach(([r, c]) => {
       highlightSet.add(`${r},${c}`)
@@ -392,7 +352,6 @@ function GameBoard() {
     highlightSet.add(`${step.resultCell[0]},${step.resultCell[1]}`)
     setHighlightedCells(highlightSet)
 
-    // Set explanation
     setSolvingExplanation({
       ruleName: step.ruleName,
       explanation: step.explanation
@@ -406,7 +365,7 @@ function GameBoard() {
     setHighlightedCells(new Set())
     setSolvingExplanation(null)
     setCurrentStep(null)
-    
+
     // Restore to final state (apply all steps from initial grid)
     if (allSteps.length > 0 && initialGrid) {
       const finalGrid = initialGrid.map(row => row.slice())
@@ -420,62 +379,62 @@ function GameBoard() {
   return (
     <div className="game-container">
       <Confetti active={showConfetti} />
-      <ConstraintToolbar 
+      <ConstraintToolbar
         onDragStart={setDraggingConstraint}
         onDragEnd={() => setDraggingConstraint(null)}
       />
-      
+
       <div className="game-layout">
         <div className="game-board-wrapper">
           <div className="game-board" ref={boardRef}>
-          {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="game-row">
-              {row.map((cell, colIndex) => {
-                const cellConstraints = {
-                  equals: constraints.equals.filter(c => 
-                    (c[0] === rowIndex && c[1] === colIndex) || 
-                    (c[2] === rowIndex && c[3] === colIndex)
-                  ),
-                  notEquals: constraints.notEquals.filter(c => 
-                    (c[0] === rowIndex && c[1] === colIndex) || 
-                    (c[2] === rowIndex && c[3] === colIndex)
-                  )
-                }
-                
-                const cellKey = `${rowIndex},${colIndex}`
-                const isHighlighted = highlightedCells.has(cellKey)
-                const isResultCell = currentStep && 
-                  currentStep.resultCell[0] === rowIndex && 
-                  currentStep.resultCell[1] === colIndex
-                const isAffectedCell = currentStep && 
-                  currentStep.affectedCells.some(([r, c]) => r === rowIndex && c === colIndex)
+            {grid.map((row, rowIndex) => (
+              <div key={rowIndex} className="game-row">
+                {row.map((cell, colIndex) => {
+                  const cellConstraints = {
+                    equals: constraints.equals.filter(c =>
+                      (c[0] === rowIndex && c[1] === colIndex) ||
+                      (c[2] === rowIndex && c[3] === colIndex)
+                    ),
+                    notEquals: constraints.notEquals.filter(c =>
+                      (c[0] === rowIndex && c[1] === colIndex) ||
+                      (c[2] === rowIndex && c[3] === colIndex)
+                    )
+                  }
 
-                return (
-                  <Cell
-                    key={`${rowIndex}-${colIndex}`}
-                    value={cell}
-                    onClick={() => handleCellClick(rowIndex, colIndex)}
-                    constraints={constraints}
-                    row={rowIndex}
-                    col={colIndex}
-                    gridSize={GRID_SIZE}
-                    onEdgeDrop={handleEdgeDrop}
-                    onConstraintRemove={handleConstraintRemove}
-                    draggingConstraint={draggingConstraint}
-                    isLocked={lockedCells[rowIndex][colIndex]}
-                    isHighlighted={isHighlighted}
-                    isResultCell={isResultCell}
-                    isAffectedCell={isAffectedCell}
-                  />
-                )
-              })}
-            </div>
-          ))}
+                  const cellKey = `${rowIndex},${colIndex}`
+                  const isHighlighted = highlightedCells.has(cellKey)
+                  const isResultCell = currentStep &&
+                    currentStep.resultCell[0] === rowIndex &&
+                    currentStep.resultCell[1] === colIndex
+                  const isAffectedCell = currentStep &&
+                    currentStep.affectedCells.some(([r, c]) => r === rowIndex && c === colIndex)
+
+                  return (
+                    <Cell
+                      key={`${rowIndex}-${colIndex}`}
+                      value={cell}
+                      onClick={() => handleCellClick(rowIndex, colIndex)}
+                      constraints={constraints}
+                      row={rowIndex}
+                      col={colIndex}
+                      gridSize={GRID_SIZE}
+                      onEdgeDrop={handleEdgeDrop}
+                      onConstraintRemove={handleConstraintRemove}
+                      draggingConstraint={draggingConstraint}
+                      isLocked={lockedCells[rowIndex][colIndex]}
+                      isHighlighted={isHighlighted}
+                      isResultCell={isResultCell}
+                      isAffectedCell={isAffectedCell}
+                    />
+                  )
+                })}
+              </div>
+            ))}
           </div>
-          
+
           <div className="game-controls">
             {isViewingHistory && (
-              <button 
+              <button
                 className="exit-history-button"
                 onClick={handleExitHistoryView}
               >
@@ -483,64 +442,58 @@ function GameBoard() {
               </button>
             )}
             <div className="control-buttons">
-          <button className="reset-button" onClick={clearGrid}>
-            Clear Grid
-          </button>
-          {!stepByStepMode ? (
-            <>
-              <button 
-                className="solve-button" 
-                onClick={handleSolve}
-                disabled={isSolving}
-              >
-                {isSolving ? 'Solving...' : 'Solve All'}
+              <button className="reset-button" onClick={clearGrid}>
+                Clear Grid
               </button>
-              <button 
-                className="solve-button step-button" 
-                onClick={handleSolveStepByStep}
-                disabled={isSolving}
-              >
-                Solve Step-by-Step
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                className="solve-button step-button" 
-                onClick={handleNextStep}
-              >
-                Next Step
-              </button>
-              <button 
-                className="reset-button" 
-                onClick={handleStopStepByStep}
-              >
-                Stop
-              </button>
-            </>
-          )}
-        </div>
-        {solvingExplanation && (
-          <div className="solving-explanation">
-            <div className="explanation-rule">{solvingExplanation.ruleName}</div>
-            <div className="explanation-text">{solvingExplanation.explanation}</div>
-          </div>
-        )}
-        {validationError && (
-          <div className="error-message">
-            ⚠️ {validationError}
-          </div>
-        )}
-        {isComplete && !validationError && (
-          <div className="win-message">
-            🎉 Puzzle solved!
-          </div>
-        )}
+              {!stepByStepMode ? (
+                <>
+                  <button
+                    className="solve-button"
+                    onClick={handleSolve}
+                    disabled={isSolving}
+                  >
+                    {isSolving ? 'Solving...' : 'Solve All'}
+                  </button>
+                  <button
+                    className="solve-button step-button"
+                    onClick={handleSolveStepByStep}
+                    disabled={isSolving}
+                  >
+                    Solve Step-by-Step
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="solve-button step-button"
+                    onClick={handleNextStep}
+                  >
+                    Next Step
+                  </button>
+                  <button
+                    className="reset-button"
+                    onClick={handleStopStepByStep}
+                  >
+                    Stop
+                  </button>
+                </>
+              )}
+            </div>
+            {validationError && (
+              <div className="error-message">
+                ⚠️ {validationError}
+              </div>
+            )}
+            {isComplete && !validationError && (
+              <div className="win-message">
+                🎉 Puzzle solved!
+              </div>
+            )}
           </div>
         </div>
-        
+
         {allSteps.length > 0 && (
-          <div className="step-history-wrapper" ref={stepHistoryWrapperRef}>
+          <div className={`step-history-wrapper has-content`} ref={stepHistoryWrapperRef}>
             <StepHistoryPanel
               steps={allSteps}
               selectedStepIndex={viewingStepIndex}
@@ -549,7 +502,14 @@ function GameBoard() {
           </div>
         )}
       </div>
-      
+
+      {solvingExplanation && (
+        <div className="solving-explanation">
+          <div className="explanation-rule">{solvingExplanation.ruleName}</div>
+          <div className="explanation-text">{solvingExplanation.explanation}</div>
+        </div>
+      )}
+
       <div className="game-rules">
         <h3>Instructions:</h3>
         <ul>

@@ -1,40 +1,3 @@
-// Generate a random puzzle with constraints
-export function generatePuzzle(size) {
-  const grid = Array(size).fill(null).map(() => Array(size).fill(null))
-  const constraints = {
-    equals: [],
-    notEquals: []
-  }
-
-  // Add some random constraints
-  const numConstraints = Math.floor(size * 1.5)
-  
-  for (let i = 0; i < numConstraints; i++) {
-    const row1 = Math.floor(Math.random() * size)
-    const col1 = Math.floor(Math.random() * size)
-    let row2, col2
-    
-    // Pick adjacent cell
-    const directions = [
-      [0, 1], [0, -1], [1, 0], [-1, 0]
-    ]
-    const [dr, dc] = directions[Math.floor(Math.random() * directions.length)]
-    row2 = row1 + dr
-    col2 = col1 + dc
-    
-    if (row2 >= 0 && row2 < size && col2 >= 0 && col2 < size) {
-      const isEqual = Math.random() > 0.5
-      if (isEqual) {
-        constraints.equals.push([row1, col1, row2, col2])
-      } else {
-        constraints.notEquals.push([row1, col1, row2, col2])
-      }
-    }
-  }
-
-  return { grid, constraints }
-}
-
 // Validate a move according to Tango rules
 export function validateMove(grid, constraints, row, col) {
   // Check row constraints: equal suns and moons
@@ -42,7 +5,7 @@ export function validateMove(grid, constraints, row, col) {
   const sunsInRow = rowValues.filter(v => v === 'sun').length
   const moonsInRow = rowValues.filter(v => v === 'moon').length
   const maxInRow = Math.floor(grid[row].length / 2)
-  
+
   if (sunsInRow > maxInRow || moonsInRow > maxInRow) {
     return false
   }
@@ -52,7 +15,7 @@ export function validateMove(grid, constraints, row, col) {
   const sunsInCol = colValues.filter(v => v === 'sun').length
   const moonsInCol = colValues.filter(v => v === 'moon').length
   const maxInCol = Math.floor(grid.length / 2)
-  
+
   if (sunsInCol > maxInCol || moonsInCol > maxInCol) {
     return false
   }
@@ -61,7 +24,7 @@ export function validateMove(grid, constraints, row, col) {
   if (hasThreeConsecutive(grid[row], col)) {
     return false
   }
-  
+
   const colArray = grid.map(r => r[col])
   if (hasThreeConsecutive(colArray, row)) {
     return false
@@ -95,17 +58,17 @@ function hasThreeConsecutive(arr, index) {
 
   // Check left/right or up/down
   let count = 1
-  
+
   // Check before
   for (let i = index - 1; i >= 0 && arr[i] === value; i--) {
     count++
   }
-  
+
   // Check after
   for (let i = index + 1; i < arr.length && arr[i] === value; i++) {
     count++
   }
-  
+
   return count > 2
 }
 
@@ -142,9 +105,9 @@ export function checkWin(grid, size) {
   // Check no three consecutive
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size - 2; col++) {
-      if (grid[row][col] === grid[row][col + 1] && 
-          grid[row][col] === grid[row][col + 2] &&
-          grid[row][col] !== null) {
+      if (grid[row][col] === grid[row][col + 1] &&
+        grid[row][col] === grid[row][col + 2] &&
+        grid[row][col] !== null) {
         return false
       }
     }
@@ -152,9 +115,9 @@ export function checkWin(grid, size) {
 
   for (let col = 0; col < size; col++) {
     for (let row = 0; row < size - 2; row++) {
-      if (grid[row][col] === grid[row + 1][col] && 
-          grid[row][col] === grid[row + 2][col] &&
-          grid[row][col] !== null) {
+      if (grid[row][col] === grid[row + 1][col] &&
+        grid[row][col] === grid[row + 2][col] &&
+        grid[row][col] !== null) {
         return false
       }
     }

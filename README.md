@@ -12,32 +12,6 @@ A beautiful web-based implementation of the Tango logic puzzle game, inspired by
 - Responsive design for mobile and desktop
 - Win detection and celebration
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Open your browser and navigate to the URL shown in the terminal (typically `http://localhost:5173`)
-
 ## Game Rules
 
 - Each row and column must contain an equal number of suns ☀️ and moons 🌙
