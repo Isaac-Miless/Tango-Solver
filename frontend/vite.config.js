@@ -20,5 +20,8 @@ export default defineConfig({
   // Base path for GitHub Pages - automatically uses repo name from GitHub Actions
   // For local development, uses root path '/'
   base: getBasePath(),
+  test: {
+    environment: 'node',
+  },
 })
 
