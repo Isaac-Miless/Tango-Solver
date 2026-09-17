@@ -38,7 +38,7 @@ The solver implements a comprehensive set of logical rules to solve puzzles step
 6. **Two Equals at End Rule**: If two equal cells are at one end, the opposite end must be opposite
 7. **Second-to-Last Equals First Rule**: If second-to-last equals the first cell in a row/col, the end must be opposite
 8. **Modifier Balance Rule**: Uses constraint information with row/column balance to deduce values
-9. **End with Equals Constraint Rule**: If one end is known and the other has equals constraints, those cells must be opposite
+9. **Adjacent Equals Constraint Rule**: If a known cell has an equals-constrained pair of cells directly adjacent to it (and adjacent to each other), those cells must be opposite to avoid three in a row
 
 ### Step-by-Step Mode Features
 

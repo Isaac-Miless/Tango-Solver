@@ -102,6 +102,86 @@ describe('Two Equals at End Rule', () => {
   })
 })
 
+describe('Modifier Balance Rule', () => {
+  it('does not treat an already-resolved notEquals pair as a guaranteed extra symbol', () => {
+    // Regression for the bug found in plans/0002: column 0 already has 2 suns
+    // (max allowed for size 6) and both cells of the col-0 notEquals pair are
+    // already filled — they're already counted in that total, not a pending
+    // future +1. Nothing about rows 3-5 is actually forced from this alone.
+    const grid = emptyGrid(6)
+    grid[0][0] = 'sun'
+    grid[1][0] = 'moon'
+    grid[2][0] = 'sun'
+    const constraints = { equals: [], notEquals: [[0, 0, 1, 0]] }
+
+    const step = getNextStep(grid, constraints, 6)
+
+    expect(step).toBeNull()
+  })
+
+  it('still fires when the notEquals pair is genuinely still empty', () => {
+    // Column 0 has 2 suns (rows 0, 3) and 1 moon (row 1) — one more sun is
+    // needed to reach max (3). The still-empty notEquals pair at rows 4-5
+    // guarantees exactly one more sun between them, which would put the
+    // column at its cap, so the only other empty cell (row 2) must be moon.
+    const grid = emptyGrid(6)
+    grid[0][0] = 'sun'
+    grid[1][0] = 'moon'
+    grid[3][0] = 'sun'
+    const constraints = { equals: [], notEquals: [[4, 0, 5, 0]] }
+
+    const step = getNextStep(grid, constraints, 6)
+
+    expect(step.ruleName).toBe('Modifier Balance Rule')
+    expect(step.resultCell).toEqual([2, 0])
+    expect(step.resultValue).toBe('moon')
+  })
+})
+
+describe('Adjacent Equals Constraint Rule', () => {
+  it('still fires when the equals-constrained pair is genuinely adjacent to the known cell', () => {
+    const grid = emptyGrid(6)
+    grid[1][5] = 'moon'
+    const constraints = { equals: [[2, 5, 3, 5]], notEquals: [] }
+
+    const step = getNextStep(grid, constraints, 6)
+
+    expect(step.ruleName).toBe('Adjacent Equals Constraint Rule')
+    expect(step.resultCell).toEqual([2, 5])
+    expect(step.resultValue).toBe('sun')
+  })
+
+  it('does not fire when the equals-constrained pair is not adjacent to each other', () => {
+    // Regression for this rule's own bug found in plans/0002: rows 1 and 3
+    // are tied together, but they aren't adjacent to each other, so knowing
+    // row 0 doesn't force either of them — row 1 could still legally match
+    // row 0's value.
+    const grid = emptyGrid(6)
+    grid[0][0] = 'moon'
+    const constraints = { equals: [[1, 0, 3, 0]], notEquals: [] }
+
+    const step = getNextStep(grid, constraints, 6)
+
+    expect(step).toBeNull()
+  })
+
+  it('no longer produces the removed End with Equals Constraint Rule\'s unsound fill', () => {
+    // Regression for the deleted rule's counterexample from plans/0001: a
+    // known cell at the very top of a column with an equals pair "near" the
+    // bottom (rows 3-4) but not adjacent to the known cell or to row 0. The
+    // old rule wrongly forced this pair to the opposite value; correctly,
+    // nothing here is forced (sun at rows 3-4 is an equally legal
+    // continuation of this partial column).
+    const grid = emptyGrid(6)
+    grid[0][0] = 'sun'
+    const constraints = { equals: [[3, 0, 4, 0]], notEquals: [] }
+
+    const step = getNextStep(grid, constraints, 6)
+
+    expect(step).toBeNull()
+  })
+})
+
 describe('solvePuzzleStepByStep', () => {
   it('returns no steps and does not throw on an already-empty grid', () => {
     const grid = emptyGrid(6)
