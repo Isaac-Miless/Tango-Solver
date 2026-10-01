@@ -1,12 +1,14 @@
+import { threeInARowIndices } from './gridLines'
+
 /**
  * Validates that a puzzle starting position is valid before solving.
- * 
+ *
  * A valid starting position must:
  * - Not have more than half the grid size of any symbol in a row/column
  * - Not have 3+ consecutive identical symbols
  * - Not violate any constraint rules
  * - Have at least some cells filled (not completely empty)
- * 
+ *
  * @param {Array<Array<string|null>>} grid - The current grid state
  * @param {Object} constraints - Object with equals and notEquals arrays
  * @param {number} size - Grid size (e.g., 6)
@@ -36,14 +38,9 @@ export function validateStartingPosition(grid, constraints, size) {
     }
 
     // Check for 3+ consecutive identical symbols in row
-    for (let col = 0; col < size - 2; col++) {
+    for (const col of threeInARowIndices(grid[row])) {
       const val1 = grid[row][col]
-      const val2 = grid[row][col + 1]
-      const val3 = grid[row][col + 2]
-      
-      if (val1 !== null && val1 === val2 && val2 === val3) {
-        errors.push(`Row ${row + 1} has 3+ consecutive ${val1 === 'sun' ? 'suns' : 'moons'} starting at column ${col + 1}`)
-      }
+      errors.push(`Row ${row + 1} has 3+ consecutive ${val1 === 'sun' ? 'suns' : 'moons'} starting at column ${col + 1}`)
     }
   }
 
@@ -61,14 +58,10 @@ export function validateStartingPosition(grid, constraints, size) {
     }
 
     // Check for 3+ consecutive identical symbols in column
-    for (let row = 0; row < size - 2; row++) {
-      const val1 = grid[row][col]
-      const val2 = grid[row + 1][col]
-      const val3 = grid[row + 2][col]
-      
-      if (val1 !== null && val1 === val2 && val2 === val3) {
-        errors.push(`Column ${col + 1} has 3+ consecutive ${val1 === 'sun' ? 'suns' : 'moons'} starting at row ${row + 1}`)
-      }
+    const colLine = grid.map(r => r[col])
+    for (const row of threeInARowIndices(colLine)) {
+      const val1 = colLine[row]
+      errors.push(`Column ${col + 1} has 3+ consecutive ${val1 === 'sun' ? 'suns' : 'moons'} starting at row ${row + 1}`)
     }
   }
 

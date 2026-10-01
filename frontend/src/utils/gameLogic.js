@@ -1,3 +1,5 @@
+import { hasThreeInARow, wouldExceedTwoConsecutive } from './gridLines'
+
 // Validate a move according to Tango rules
 export function validateMove(grid, constraints, row, col) {
   // Check row constraints: equal suns and moons
@@ -21,12 +23,12 @@ export function validateMove(grid, constraints, row, col) {
   }
 
   // Check consecutive symbols (no more than 2)
-  if (hasThreeConsecutive(grid[row], col)) {
+  if (wouldExceedTwoConsecutive(grid[row], col)) {
     return false
   }
 
   const colArray = grid.map(r => r[col])
-  if (hasThreeConsecutive(colArray, row)) {
+  if (wouldExceedTwoConsecutive(colArray, row)) {
     return false
   }
 
@@ -49,27 +51,6 @@ export function validateMove(grid, constraints, row, col) {
   }
 
   return true
-}
-
-// Check if there are three consecutive identical values
-function hasThreeConsecutive(arr, index) {
-  const value = arr[index]
-  if (value === null) return false
-
-  // Check left/right or up/down
-  let count = 1
-
-  // Check before
-  for (let i = index - 1; i >= 0 && arr[i] === value; i--) {
-    count++
-  }
-
-  // Check after
-  for (let i = index + 1; i < arr.length && arr[i] === value; i++) {
-    count++
-  }
-
-  return count > 2
 }
 
 // Check if the puzzle is complete and correct
@@ -104,22 +85,14 @@ export function checkWin(grid, size) {
 
   // Check no three consecutive
   for (let row = 0; row < size; row++) {
-    for (let col = 0; col < size - 2; col++) {
-      if (grid[row][col] === grid[row][col + 1] &&
-        grid[row][col] === grid[row][col + 2] &&
-        grid[row][col] !== null) {
-        return false
-      }
+    if (hasThreeInARow(grid[row])) {
+      return false
     }
   }
 
   for (let col = 0; col < size; col++) {
-    for (let row = 0; row < size - 2; row++) {
-      if (grid[row][col] === grid[row + 1][col] &&
-        grid[row][col] === grid[row + 2][col] &&
-        grid[row][col] !== null) {
-        return false
-      }
+    if (hasThreeInARow(grid.map(r => r[col]))) {
+      return false
     }
   }
 
