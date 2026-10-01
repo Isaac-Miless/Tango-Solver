@@ -10,7 +10,6 @@ function Header() {
           Tango
           <span className="moon-emoji">🌙</span>
         </h1>
-        <p className="header-subtitle">Puzzle Solver</p>
       </div>
     </header>
   )

@@ -15,6 +15,40 @@
   overflow-x: hidden;
 }
 
+.mode-view {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mode-view-hidden {
+  display: none;
+}
+
+/* Shared by LearnMode and UnlimitedMode placeholders — kept here rather than
+   duplicated per-component, since it's one shared rule, not per-mode styling. */
+.mode-placeholder {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mode-placeholder h2 {
+  margin: 0 0 0.75rem 0;
+}
+
+.mode-placeholder p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
 /* Responsive padding for main content */
 @media (max-width: 768px) {
   .main-content {
