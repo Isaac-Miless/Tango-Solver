@@ -14,6 +14,7 @@
 import { validateStartingPosition } from './validator'
 import { solvePuzzleStepByStep } from './solver'
 import { checkWin } from './gameLogic'
+import { hasThreeInARow } from './gridLines'
 
 const DEFAULT_SIZE = 6
 
@@ -67,7 +68,7 @@ function buildValidRows(size, half) {
   for (const sunPositions of combinations(size, half)) {
     const row = Array(size).fill('moon')
     sunPositions.forEach(p => { row[p] = 'sun' })
-    if (!hasThreeConsecutive(row)) rows.push(row)
+    if (!hasThreeInARow(row)) rows.push(row)
   }
   return rows
 }
@@ -88,13 +89,6 @@ function combinations(n, k) {
   }
   build(0)
   return result
-}
-
-function hasThreeConsecutive(row) {
-  for (let i = 0; i < row.length - 2; i++) {
-    if (row[i] === row[i + 1] && row[i + 1] === row[i + 2]) return true
-  }
-  return false
 }
 
 function fitsColumns(grid, candidateRow, row, half) {

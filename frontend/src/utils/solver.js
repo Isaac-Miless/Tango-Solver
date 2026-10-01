@@ -1,11 +1,13 @@
 /**
  * SOLVER IMPLEMENTATION
- * 
+ *
  * This file contains the logic to solve Tango puzzles step-by-step.
- * 
+ *
  * The solver implements multiple logical rules and provides explanations
  * for each move, allowing players to learn the solving process.
  */
+
+import { hasThreeInARow } from './gridLines'
 
 /**
  * Represents a solving step with explanation
@@ -1108,15 +1110,8 @@ export function isValidPartialSolution(grid, constraints, size) {
       return false
     }
 
-    // Check consecutive
-    for (let col = 0; col < size - 2; col++) {
-      const val1 = grid[row][col]
-      const val2 = grid[row][col + 1]
-      const val3 = grid[row][col + 2]
-      
-      if (val1 !== null && val1 === val2 && val2 === val3) {
-        return false
-      }
+    if (hasThreeInARow(grid[row])) {
+      return false
     }
   }
 
@@ -1130,15 +1125,8 @@ export function isValidPartialSolution(grid, constraints, size) {
       return false
     }
 
-    // Check consecutive
-    for (let row = 0; row < size - 2; row++) {
-      const val1 = grid[row][col]
-      const val2 = grid[row + 1][col]
-      const val3 = grid[row + 2][col]
-      
-      if (val1 !== null && val1 === val2 && val2 === val3) {
-        return false
-      }
+    if (hasThreeInARow(grid.map(r => r[col]))) {
+      return false
     }
   }
 
