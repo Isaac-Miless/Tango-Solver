@@ -1,0 +1,30 @@
+.puzzle-grid {
+  display: inline-block;
+  width: auto;
+  padding: 9px;
+  border: 3px solid #333;
+  border-radius: 8px;
+  background: #f5f5f5;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.puzzle-grid-row {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .puzzle-grid {
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .puzzle-grid {
+    padding: 4px;
+  }
+}
