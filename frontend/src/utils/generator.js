@@ -189,7 +189,7 @@ function isFullySolvable(grid, constraints, size, solution) {
     result[step.resultCell[0]][step.resultCell[1]] = step.resultValue
   })
 
-  if (!checkWin(result, size)) return false
+  if (!checkWin(result, constraints, size)) return false
   return gridsEqual(result, solution)
 }
 

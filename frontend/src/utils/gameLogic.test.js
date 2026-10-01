@@ -33,7 +33,7 @@ describe('checkWin', () => {
   it('returns false while the grid still has empty cells', () => {
     const grid = emptyGrid(4)
     grid[0] = ['sun', 'moon', null, null]
-    expect(checkWin(grid, 4)).toBe(false)
+    expect(checkWin(grid, noConstraints, 4)).toBe(false)
   })
 
   it('returns true for a fully filled, balanced, valid grid', () => {
@@ -45,7 +45,7 @@ describe('checkWin', () => {
       ['sun', 'moon', 'sun', 'moon'],
       ['moon', 'sun', 'moon', 'sun'],
     ]
-    expect(checkWin(grid, 4)).toBe(true)
+    expect(checkWin(grid, noConstraints, 4)).toBe(true)
   })
 
   it('returns false when a row has an unequal split of symbols', () => {
@@ -55,6 +55,54 @@ describe('checkWin', () => {
       ['sun', 'moon', 'sun', 'moon'],
       ['moon', 'sun', 'moon', 'moon'],
     ]
-    expect(checkWin(grid, 4)).toBe(false)
+    expect(checkWin(grid, noConstraints, 4)).toBe(false)
+  })
+
+  it('returns false when a complete, otherwise-valid grid violates an equals constraint', () => {
+    // Regression: checkWin used to only check fill/balance/no-3-in-a-row and
+    // never looked at constraints at all, so a complete grid that broke a
+    // visible "=" or "x" clue was still reported as a win. Caught by
+    // adversarial review of Unlimited mode (plans/0006), which showed this
+    // was reachable in practice: 40/40 generated puzzles had at least one
+    // complete grid that matched the starting clues, broke a constraint, and
+    // still passed the old checkWin.
+    const grid = [
+      ['sun', 'sun', 'moon', 'moon'],
+      ['moon', 'moon', 'sun', 'sun'],
+      ['sun', 'moon', 'sun', 'moon'],
+      ['moon', 'sun', 'moon', 'sun'],
+    ]
+    // (0,0)='sun' and (0,1)='sun' already agree, so this constraint is
+    // trivially satisfied — use a pair that's actually equal in the grid
+    // but constrained to be different instead, to force a real violation.
+    const constraints = { equals: [], notEquals: [[0, 0, 0, 1]] }
+    expect(checkWin(grid, constraints, 4)).toBe(false)
+  })
+
+  it('returns false when a complete, otherwise-valid grid violates a not-equals constraint', () => {
+    const grid = [
+      ['sun', 'sun', 'moon', 'moon'],
+      ['moon', 'moon', 'sun', 'sun'],
+      ['sun', 'moon', 'sun', 'moon'],
+      ['moon', 'sun', 'moon', 'sun'],
+    ]
+    // (0,0)='sun' and (1,0)='moon' are already different, so constrain them
+    // to be equal instead, to force a real violation.
+    const constraints = { equals: [[0, 0, 1, 0]], notEquals: [] }
+    expect(checkWin(grid, constraints, 4)).toBe(false)
+  })
+
+  it('returns true when a complete grid satisfies all given constraints', () => {
+    const grid = [
+      ['sun', 'sun', 'moon', 'moon'],
+      ['moon', 'moon', 'sun', 'sun'],
+      ['sun', 'moon', 'sun', 'moon'],
+      ['moon', 'sun', 'moon', 'sun'],
+    ]
+    const constraints = {
+      equals: [[0, 0, 0, 1]], // both 'sun' — satisfied
+      notEquals: [[0, 0, 1, 0]], // 'sun' vs 'moon' — satisfied
+    }
+    expect(checkWin(grid, constraints, 4)).toBe(true)
   })
 })

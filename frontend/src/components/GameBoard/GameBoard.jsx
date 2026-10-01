@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import Cell from '../Cell/Cell'
+import PuzzleGrid from '../PuzzleGrid/PuzzleGrid'
 import ConstraintToolbar from '../ConstraintToolbar/ConstraintToolbar'
 import StepHistoryPanel from '../StepHistoryPanel/StepHistoryPanel'
 import Confetti from '../Confetti/Confetti'
@@ -90,7 +90,7 @@ function GameBoard() {
     }
 
     setGrid(newGrid)
-    setIsComplete(checkWin(newGrid, GRID_SIZE))
+    setIsComplete(checkWin(newGrid, constraints, GRID_SIZE))
   }
 
   const handleEdgeDrop = (edge, constraintType) => {
@@ -178,7 +178,7 @@ function GameBoard() {
     setViewingStepIndex(null)
     setIsViewingHistory(false)
 
-    if (checkWin(grid, GRID_SIZE)) {
+    if (checkWin(grid, constraints, GRID_SIZE)) {
       setValidationError('Puzzle is already solved!')
       setIsSolving(false)
       return
@@ -214,7 +214,7 @@ function GameBoard() {
 
         setGrid(solvedGrid)
         setLatestGrid(solvedGrid.map(row => row.slice()))
-        const puzzleComplete = checkWin(solvedGrid, GRID_SIZE)
+        const puzzleComplete = checkWin(solvedGrid, constraints, GRID_SIZE)
         setIsComplete(puzzleComplete)
         if (puzzleComplete) {
           setShowConfetti(true)
@@ -240,7 +240,7 @@ function GameBoard() {
     setViewingStepIndex(null)
     setIsViewingHistory(false)
 
-    if (checkWin(grid, GRID_SIZE)) {
+    if (checkWin(grid, constraints, GRID_SIZE)) {
       setValidationError('Puzzle is already solved!')
       setStepByStepMode(false)
       return
@@ -310,7 +310,7 @@ function GameBoard() {
       })
       setCurrentStep(step)
 
-      if (checkWin(newGrid, GRID_SIZE)) {
+      if (checkWin(newGrid, constraints, GRID_SIZE)) {
         setIsComplete(true)
         setStepByStepMode(false)
         setHighlightedCells(new Set())
@@ -386,51 +386,19 @@ function GameBoard() {
 
       <div className="game-layout">
         <div className="game-board-wrapper">
-          <div className="game-board" ref={boardRef}>
-            {grid.map((row, rowIndex) => (
-              <div key={rowIndex} className="game-row">
-                {row.map((cell, colIndex) => {
-                  const cellConstraints = {
-                    equals: constraints.equals.filter(c =>
-                      (c[0] === rowIndex && c[1] === colIndex) ||
-                      (c[2] === rowIndex && c[3] === colIndex)
-                    ),
-                    notEquals: constraints.notEquals.filter(c =>
-                      (c[0] === rowIndex && c[1] === colIndex) ||
-                      (c[2] === rowIndex && c[3] === colIndex)
-                    )
-                  }
-
-                  const cellKey = `${rowIndex},${colIndex}`
-                  const isHighlighted = highlightedCells.has(cellKey)
-                  const isResultCell = currentStep &&
-                    currentStep.resultCell[0] === rowIndex &&
-                    currentStep.resultCell[1] === colIndex
-                  const isAffectedCell = currentStep &&
-                    currentStep.affectedCells.some(([r, c]) => r === rowIndex && c === colIndex)
-
-                  return (
-                    <Cell
-                      key={`${rowIndex}-${colIndex}`}
-                      value={cell}
-                      onClick={() => handleCellClick(rowIndex, colIndex)}
-                      constraints={constraints}
-                      row={rowIndex}
-                      col={colIndex}
-                      gridSize={GRID_SIZE}
-                      onEdgeDrop={handleEdgeDrop}
-                      onConstraintRemove={handleConstraintRemove}
-                      draggingConstraint={draggingConstraint}
-                      isLocked={lockedCells[rowIndex][colIndex]}
-                      isHighlighted={isHighlighted}
-                      isResultCell={isResultCell}
-                      isAffectedCell={isAffectedCell}
-                    />
-                  )
-                })}
-              </div>
-            ))}
-          </div>
+          <PuzzleGrid
+            grid={grid}
+            constraints={constraints}
+            gridSize={GRID_SIZE}
+            onCellClick={handleCellClick}
+            lockedCells={lockedCells}
+            highlightedCells={highlightedCells}
+            currentStep={currentStep}
+            onEdgeDrop={handleEdgeDrop}
+            onConstraintRemove={handleConstraintRemove}
+            draggingConstraint={draggingConstraint}
+            boardRef={boardRef}
+          />
 
           <div className="game-controls">
             {isViewingHistory && (

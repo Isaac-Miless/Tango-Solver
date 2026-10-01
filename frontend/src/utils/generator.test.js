@@ -19,7 +19,7 @@ describe('generatePuzzle', () => {
       const { grid, constraints, solution } = generatePuzzle(SIZE)
 
       // The solution itself must be a genuinely complete, valid grid.
-      expect(checkWin(solution, SIZE)).toBe(true)
+      expect(checkWin(solution, constraints, SIZE)).toBe(true)
 
       // The starting position must be a valid, non-empty starting grid.
       const validation = validateStartingPosition(grid, constraints, SIZE)
@@ -34,7 +34,7 @@ describe('generatePuzzle', () => {
         result[step.resultCell[0]][step.resultCell[1]] = step.resultValue
       })
 
-      expect(checkWin(result, SIZE)).toBe(true)
+      expect(checkWin(result, constraints, SIZE)).toBe(true)
       expect(result).toEqual(solution)
     }
   })

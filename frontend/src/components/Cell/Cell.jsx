@@ -118,7 +118,7 @@ function Cell({
 
     return (
       <div
-        className={`edge edge-${edge} ${isHovered && canDrop ? 'edge-hover' : ''} ${constraint ? 'edge-has-constraint' : ''}`}
+        className={`edge edge-${edge} ${isHovered && canDrop ? 'edge-hover' : ''} ${constraint && onConstraintRemove ? 'edge-has-constraint' : ''}`}
         onDragOver={(e) => handleEdgeDragOver(e, edge)}
         onDragLeave={handleEdgeDragLeave}
         onDrop={(e) => handleEdgeDrop(e, edge)}

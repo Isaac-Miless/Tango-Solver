@@ -54,7 +54,7 @@ export function validateMove(grid, constraints, row, col) {
 }
 
 // Check if the puzzle is complete and correct
-export function checkWin(grid, size) {
+export function checkWin(grid, constraints, size) {
   // Check all cells are filled
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
@@ -92,6 +92,20 @@ export function checkWin(grid, size) {
 
   for (let col = 0; col < size; col++) {
     if (hasThreeInARow(grid.map(r => r[col]))) {
+      return false
+    }
+  }
+
+  // Check equals constraints
+  for (const [r1, c1, r2, c2] of constraints.equals) {
+    if (grid[r1][c1] !== grid[r2][c2]) {
+      return false
+    }
+  }
+
+  // Check not-equals constraints
+  for (const [r1, c1, r2, c2] of constraints.notEquals) {
+    if (grid[r1][c1] === grid[r2][c2]) {
       return false
     }
   }
